@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 2012 for Windows Desktop
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Tor Finisher GUI", "Tor Finisher\Tor Finisher GUI.vbproj", "{EB93FD02-E6C5-4853-9C9E-93DEF98458F1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EB93FD02-E6C5-4853-9C9E-93DEF98458F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB93FD02-E6C5-4853-9C9E-93DEF98458F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB93FD02-E6C5-4853-9C9E-93DEF98458F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB93FD02-E6C5-4853-9C9E-93DEF98458F1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
