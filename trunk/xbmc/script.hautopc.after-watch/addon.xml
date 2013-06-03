@@ -8,7 +8,7 @@
 		<provides>executable</provides>
 	</extension>
 	<extension point="xbmc.addon.metadata">
-		<summary>HauToPC project (beta)</summary>
+		<summary>HauToPC project</summary>
 		<description>After watching a movie or episode:
 - Move or delete
 - Rate on IMDb or library
