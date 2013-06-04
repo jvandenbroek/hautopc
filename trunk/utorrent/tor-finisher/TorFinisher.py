@@ -17,7 +17,10 @@ from lib import requests
 ## INFO
 PROGRAM_NAME = 'Tor Finisher'
 PROGRAM_VERSION = '1.0.0'
-PROGRAM_PATH = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, 'frozen', False):
+	PROGRAM_PATH = os.path.dirname(sys.executable)
+else:
+	PROGRAM_PATH = os.path.dirname(__file__)
 
 ## ARGUMENTS
 # "C:\path\to\TorFinisher.exe" "%L" "%N" "%D" "%K" "%F" "%I"

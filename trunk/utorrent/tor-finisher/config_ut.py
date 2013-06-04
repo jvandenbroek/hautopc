@@ -8,7 +8,10 @@ import tkMessageBox
 from lib import requests
 
 def main():
-	PROGRAM_PATH = os.path.dirname(os.path.abspath(__file__))
+	if getattr(sys, 'frozen', False):
+		PROGRAM_PATH = os.path.dirname(sys.executable)
+	else:
+		PROGRAM_PATH = os.path.dirname(__file__)
 
 	path = os.path.join(PROGRAM_PATH, 'settings.xml')
 	if not os.path.exists(path):
