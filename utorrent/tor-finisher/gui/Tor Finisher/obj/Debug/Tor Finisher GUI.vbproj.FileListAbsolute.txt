@@ -26,3 +26,7 @@ C:\Users\Pynto\Desktop\HauToPC\SCRIPTS\Tor Finisher GUI\Tor Finisher\obj\Debug\T
 C:\Users\Pynto\Desktop\HauToPC\SCRIPTS\Tor Finisher GUI\Tor Finisher\obj\Debug\Tor Finisher GUI.vbproj.GenerateResource.Cache
 C:\Users\Pynto\Desktop\HauToPC\SCRIPTS\Tor Finisher GUI\Tor Finisher\obj\Debug\TorFinisherGUI.exe.manifest
 C:\Users\Pynto\Desktop\HauToPC\SCRIPTS\Tor Finisher GUI\Tor Finisher\obj\Debug\TorFinisherGUI.application
+C:\Users\Pynto\Desktop\HauToPC\svn\utorrent\tor-finisher\gui\Tor Finisher\bin\Debug\TorFinisherGUI.exe.config
+C:\Users\Pynto\Desktop\HauToPC\svn\utorrent\tor-finisher\gui\Tor Finisher\obj\Debug\TorFinisherGUI.exe
+C:\Users\Pynto\Desktop\HauToPC\svn\utorrent\tor-finisher\gui\Tor Finisher\obj\Debug\TorFinisherGUI.xml
+C:\Users\Pynto\Desktop\HauToPC\svn\utorrent\tor-finisher\gui\Tor Finisher\obj\Debug\TorFinisherGUI.pdb
