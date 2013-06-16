@@ -1,52 +1,54 @@
 import os
 import sys
 import re
-import json
+import time
 import xml.etree.ElementTree as xml
-import Tkinter
-import tkMessageBox
 from lib import requests
 
-def main():
+try:
+	# find himself
 	if getattr(sys, 'frozen', False):
 		PROGRAM_PATH = os.path.dirname(sys.executable)
 	else:
 		PROGRAM_PATH = os.path.dirname(__file__)
 
-	path = os.path.join(PROGRAM_PATH, 'settings.xml')
-	if not os.path.exists(path):
-		raise Exception('Settings not found\n%s' % path)
-	settings = xml.parse(path).getroot()
+	# parse settings from file
+	SETTINGS_PATH = os.path.join(PROGRAM_PATH, 'settings.xml')
+	if not os.path.exists(SETTINGS_PATH):
+		raise Exception('Settings file not found (%s)' % SETTINGS_PATH)
+	SETTINGS = xml.parse(SETTINGS_PATH).getroot()
+	UTORRENT_HOST = SETTINGS.find('utorrent/server/host').text
+	UTORRENT_PORT = SETTINGS.find('utorrent/server/port').text
+	UTORRENT_USER = SETTINGS.find('utorrent/server/username').text
+	UTORRENT_PASS = SETTINGS.find('utorrent/server/password').text
 
-	UTORRENT_HOST = settings.find('utorrent/server/host').text
-	UTORRENT_PORT = settings.find('utorrent/server/port').text
-	UTORRENT_USER = settings.find('utorrent/server/username').text
-	UTORRENT_PASS = settings.find('utorrent/server/password').text
-	UTORRENT_AUTH = requests.auth.HTTPBasicAuth(UTORRENT_USER, UTORRENT_PASS)
-	REGEX_TOKEN = r'<div[^>]*id=[\"\']token[\"\'][^>]*>([^<]*)</div>'
-	URL_API = 'http://%s:%s/gui/' % (UTORRENT_HOST, UTORRENT_PORT)
-	URL_TOKEN = 'http://%s:%s/gui/token.html' % (UTORRENT_HOST, UTORRENT_PORT)
-	SET = '"' + os.path.join(PROGRAM_PATH, 'TorFinisher.exe') + '" "%L" "%N" "%D" "%K" "%F" "%I"'
-	HEADERS = {'content-type': 'application/json', 'user-agent': 'python-requests'}
-
+	# retrieve token from utorrent
+	print 'Connecting to uTorrent...'
 	s = requests.session()
-	r = s.get(URL_TOKEN, headers=HEADERS, auth=UTORRENT_AUTH)
-	match = re.search(REGEX_TOKEN, r.text, re.IGNORECASE)
-	if not match:
-		raise Exception('Cant connect to utorrent')
-	token = match.group(1)
-	cmd = {'token': token, 'action': 'setsetting', 's': 'finish_cmd', 'v': SET}
-	r = s.get(URL_API, headers=HEADERS, auth=UTORRENT_AUTH, params=cmd)
-	if not 'build' in r.json():
-		raise Exception('error')
-
-if __name__ == '__main__':
+	AUTH = requests.auth.HTTPBasicAuth(UTORRENT_USER, UTORRENT_PASS)
+	URL = 'http://%s:%s/gui/token.html' % (UTORRENT_HOST, UTORRENT_PORT)
+	HEADERS = {'content-type': 'application/json', 'user-agent': 'python-requests'}
 	try:
-		main()
-	except Exception, e:
-		Tkinter.Tk().wm_withdraw()
-		tkMessageBox.showerror('config_ut', e.message)
-		sys.exit()
-	else:
-		Tkinter.Tk().wm_withdraw()
-		tkMessageBox.showinfo('config_ut', 'Sucess!')
+		r = s.get(URL, headers=HEADERS, auth=AUTH)
+	except:
+		raise Exception('Cant connect to uTorrent. Probably wrong settings or uTorrent not running.')
+	REGEX = r'<div[^>]*id=[\"\']token[\"\'][^>]*>([^<]*)</div>'
+	MATCH = re.search(REGEX, r.text, re.IGNORECASE)
+	if not MATCH:
+		raise Exception('Cant connect to uTorrent')
+	TOKEN = MATCH.group(1)
+
+	# set setting in utorrent
+	print 'Updating "Run when finish" setting in uTorrent...'
+	URL = 'http://%s:%s/gui/' % (UTORRENT_HOST, UTORRENT_PORT)
+	LINE = '"' + os.path.join(PROGRAM_PATH, 'TorFinisher.exe') + '" "%L" "%N" "%D" "%K" "%F" "%I"'
+	PARAMS = {'token': TOKEN, 'action': 'setsetting', 's': 'finish_cmd', 'v': LINE}
+	r = s.get(URL, headers=HEADERS, auth=AUTH, params=PARAMS)
+	if not 'build' in r.json():
+		raise Exception('Cant set setting in uTorrent')
+except Exception, e:
+	print e.message
+	time.sleep(10)
+else:
+	print 'Sucess!'
+	time.sleep(5)
