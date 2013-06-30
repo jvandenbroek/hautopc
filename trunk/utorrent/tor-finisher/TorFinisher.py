@@ -12,11 +12,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from lib import requests
-#from lib import disks
+from lib import disks
 
 ## INFO
 PROGRAM_NAME = 'Tor Finisher'
 PROGRAM_VERSION = '1.0.0'
+PROGRAM_ICON = 'https://code.google.com/p/hautopc/source/browse/trunk/utorrent/tor-finisher/logo.png'
 if getattr(sys, 'frozen', False):
 	PROGRAM_PATH = os.path.dirname(sys.executable)
 else:
@@ -52,6 +53,14 @@ SERIES_LABEL = settings.find('processing/utorrent/serieslabel').text
 LABEL_SEPARATOR = settings.find('processing/utorrent/labelseparator').text
 UNRAR_PATH = settings.find('processing/unrar/location').text
 LOG_ENABLED = settings.find('processing/log/enabled').text
+UTORRENT_HOST = settings.find('utorrent/server/host').text
+UTORRENT_PORT = settings.find('utorrent/server/port').text
+UTORRENT_USER = settings.find('utorrent/server/username').text
+UTORRENT_PASS = settings.find('utorrent/server/password').text
+UTORRENT_ENABLED = settings.find('utorrent/enabled').text
+UTORRENT_DAYS_OLDER = settings.find('utorrent/conditions/daysolder').text
+UTORRENT_COMPARATOR = settings.find('utorrent/conditions/comparator').text
+UTORRENT_RATIO = settings.find('utorrent/conditions/ratio').text
 EMAIL_ENABLED = settings.find('email/enabled').text
 EMAIL_FROM = settings.find('email/headers/from').text
 EMAIL_TOS = [to.text for to in settings.findall('email/headers/to/email')]
@@ -59,12 +68,6 @@ EMAIL_HOST = settings.find('email/server/host').text
 EMAIL_PORT = settings.find('email/server/port').text
 EMAIL_USER = settings.find('email/server/username').text
 EMAIL_PASS = settings.find('email/server/password').text
-UTORRENT_PAUSE_ENABLED = settings.find('utorrent/pauseenabled').text
-UTORRENT_REMOVE_ENABLED = settings.find('utorrent/removeenabled').text
-UTORRENT_HOST = settings.find('utorrent/server/host').text
-UTORRENT_PORT = settings.find('utorrent/server/port').text
-UTORRENT_USER = settings.find('utorrent/server/username').text
-UTORRENT_PASS = settings.find('utorrent/server/password').text
 XBMC_ENABLED = settings.find('xbmc/enabled').text
 XBMC_HOST = settings.find('xbmc/server/host').text
 XBMC_PORT = settings.find('xbmc/server/port').text
@@ -98,7 +101,9 @@ REGEX_SERIES_SEASON_EPISODE = r's0*(\d{1,2})e(\d{2})'
 REGEX_SERIES_SEASON_EPISODE_ALT = r'([1-9]*\d})x(\d{2})'
 REGEX_UTORRENT_TOKEN = r'<div[^>]*id=[\"\']token[\"\'][^>]*>([^<]*)</div>'
 XBMC_CMD_MOVIES = '{"jsonrpc":"2.0","method":"VideoLibrary.GetMovies","params":{"properties":["file"]},"id":1}'
+XBMC_CMD_EPISODES = '{"jsonrpc":"2.0","method":"VideoLibrary.GetEpisodes","params":{"properties":["file"]},"id":1}'
 XBMC_CMD_UPDATE = '{"jsonrpc":"2.0","method":"VideoLibrary.Scan","id":1}'
+XBMC_CMD_BUSY = '{"jsonrpc":"2.0","method":"XBMC.GetInfoBooleans","params":{ "booleans": ["library.isscanning"] },"id":1}'
 XBMC_CMD_ALERT = '{"jsonrpc":"2.0","method":"GUI.ShowNotification","params":{"title":"%s","message":"%s","image":"%s","displaytime":7000},"id":1}'
 UTORRENT_CMD_LIST = {'list': 1}
 UTORRENT_INDEX_HASH = 0
@@ -110,10 +115,10 @@ UTORRENT_INDEX_UPSPEED = 8
 UTORRENT_INDEX_LABEL = 11
 UTORRENT_INDEX_ADDEDON = 23
 UTORRENT_INDEX_PATH = 26
+UTORRENT_BITWISE_STARTED = 1
+UTORRENT_BITWISE_PAUSED = 32
 UNRAR_OK = 'All OK'
 MINIMUM_FREE_SPACE = 20
-MAXIMUM_TORRENT_DAYS = 30
-MINIMUM_TORRENT_RATIO = 1000
 
 ## CLASS
 class Logger:
@@ -150,16 +155,12 @@ class Logger:
 		if self.enabled == 'True':
 			self.f.write('%s | WARNING | %s\n' % (self.__time(), msg))
 		send_email(EMAIL_SUBJECT_WARNING % TORRENT_TITLE, msg)
-		Tkinter.Tk().wm_withdraw()
-		tkMessageBox.showwarning(PROGRAM_NAME, TORRENT_TITLE + '\n' + msg)
 
 	def error(self, msg):
 		print self.S % (self.__time(), 'ERROR', msg)
 		if self.enabled == 'True':
 			self.f.write('%s | ERROR | %s\n' % (self.__time(), msg))
-		send_email(EMAIL_SUBJECT_ERROR % TORRENT_TITLE, msg)# todo try?
-		Tkinter.Tk().wm_withdraw()
-		tkMessageBox.showerror(PROGRAM_NAME, TORRENT_TITLE + '\n' + msg)
+		send_email(EMAIL_SUBJECT_ERROR % TORRENT_TITLE, msg)
 
 ## UTIL
 def get_file(path, extensions, not_sample=True):
@@ -258,6 +259,12 @@ def acess_xbmc(cmd):
 		raise Exception('Error connecting to Xbmc')
 	return j
 
+def disk_full(disk):
+	u = disks.disk_usage(disk)
+	free = 100 * u[2] / u[0]
+	if free <= MINIMUM_FREE_SPACE:
+		return True
+
 ## SUPL
 def test_episode(path, episode):
 	f = [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f)) and ('E%s'%episode in os.path.basename(f).upper() or 'X%s'%episode in os.path.basename(f).upper())]
@@ -274,48 +281,87 @@ def generate_body(title, subtitle, imdb, poster, path):
 	body = body.replace('%LINK2%', EMAIL_LINK2 % path.replace('\\','/'))
 	return body
 
-# def get_full_disks():
-	# list = []
-	# for disk in ['C:\\','D:\\','G:\\']:
-		# u = disks.disk_usage(disk)
-		# free = 100 * u[2] / u[0]
-		# if free <= MINIMUM_FREE_SPACE:
-			# list.append(disk)
-	# return list
+def pause_torrents():
+	log.info('Pausing torrents...')
+	j = acess_utorrent(UTORRENT_CMD_LIST)
+	for t in j['torrents']:
+		if (not t[UTORRENT_INDEX_PERCENT] == 1000 and
+			t[UTORRENT_INDEX_STATUS] & UTORRENT_BITWISE_STARTED and
+			not t[UTORRENT_INDEX_STATUS] & UTORRENT_BITWISE_PAUSED):
+			hash = t[UTORRENT_INDEX_HASH]
+			cmd = {'action': 'pause', 'hash': hash}
+			acess_utorrent(cmd)
 
-# def start_torrents():
-	# if UTORRENT_PAUSE_ENABLED == 'True':
-		# log.info('Starting torrents...')
+def unpause_torrents():
+	log.info('Unpausing torrents...')
+	j = acess_utorrent(UTORRENT_CMD_LIST)
+	for t in j['torrents']:
+		if (not t[UTORRENT_INDEX_PERCENT] == 1000 and
+			t[UTORRENT_INDEX_STATUS] & UTORRENT_BITWISE_PAUSED):
+			hash = t[UTORRENT_INDEX_HASH]
+			cmd = {'action': 'unpause', 'hash': hash}
+			acess_utorrent(cmd)
 
-# def pause_torrents():
-	# if UTORRENT_PAUSE_ENABLED == 'True':
-		# log.info('Pausing torrents...')
-		# j = acess_utorrent(UTORRENT_CMD_LIST)
-		# for torrent in j['torrents']:
-			# if torrent[UTORRENT_INDEX_STATUS] == 
+def remove_torrents():
+	if UTORRENT_ENABLED == 'True':
+		log.info('Removing torrents...')
+		epoch = int(time.time() - int(UTORRENT_DAYS_OLDER)*24*60*60)
+		j = acess_utorrent(UTORRENT_CMD_LIST)
+		for t in j['torrents']:
+			if (not t[UTORRENT_INDEX_NAME] == TORRENT_TITLE and
+				(t[UTORRENT_INDEX_LABEL].startswith(LABEL_MOVIES) or t[UTORRENT_INDEX_LABEL].startswith(LABEL_SERIES)) and
+				t[UTORRENT_INDEX_PERCENT] == 1000 and
+				t[UTORRENT_INDEX_UPSPEED] == 0 and
+				t[UTORRENT_INDEX_ADDEDON] < epoch and
+				((UTORRENT_COMPARATOR == 'lesser' and t[UTORRENT_INDEX_RATIO] < UTORRENT_RATIO) or
+				(UTORRENT_COMPARATOR == 'greater' and t[UTORRENT_INDEX_RATIO] > UTORRENT_RATIO))):
+				hash = t[UTORRENT_INDEX_HASH]
+				cmd = {'action': 'removedata', 'hash': hash}
+				acess_utorrent(cmd)
+				log.info('Torrent deleted: %s' % t[UTORRENT_INDEX_NAME])
 
-# def remove_torrents():
-	# if UTORRENT_REMOVE_ENABLED == 'True':
-		# log.info('Removing torrents...')
-		# j = acess_utorrent(UTORRENT_CMD_LIST)
-		# for torrent in j['torrents']:
-			# if (not torrent[UTORRENT_INDEX_NAME] == TORRENT_TITLE and
-				# (torrent[UTORRENT_INDEX_LABEL].startswith(LABEL_MOVIES) or torrent[UTORRENT_INDEX_LABEL].startswith(LABEL_SERIES)) and
-				# torrent[UTORRENT_INDEX_PERCENT] == 1000 and
-				# torrent[UTORRENT_INDEX_ADDEDON] != 'todo2' and
-				# torrent[UTORRENT_INDEX_RATIO] <= 'todo2' and
-				# torrent[UTORRENT_INDEX_UPSPEED] == 0):
-				# hash = torrent[UTORRENT_INDEX_HASH]
-				# cmd = {'action': 'removedata', 'hash': hash}
-				# acess_utorrent(cmd)
-				# log.info('Torrent deleted: %s' % torrent[UTORRENT_INDEX_NAME])
-
-def update_xbmc(path):
+def update_movies_xbmc(path):
 	if XBMC_ENABLED == 'True':
 		log.info('Updating xbmc...')
+		movies = acess_xbmc(XBMC_CMD_MOVIES)['result']['movies']
+		before = len(movies)
+		exist = [movie for movie in movies if movie['file'] == path]
+		if exist:
+			raise Exception('Movie already in XBMC library')
 		acess_xbmc(XBMC_CMD_UPDATE)
-		# movies = acess_xbmc(XBMC_CMD_MOVIES)['result']['movies']
-		# acess_xbmc(XBMC_CMD_ALERT)
+		time.sleep(0.2)
+		while acess_xbmc(XBMC_CMD_BUSY)['result']['library.isscanning']:
+			time.sleep(0.2)
+		movies = acess_xbmc(XBMC_CMD_MOVIES)['result']['movies']
+		exist = [movie for movie in movies if movie['file'] == path]
+		if not exist:
+			raise Exception('Movie not added to XBMC library')
+		after = len(movies)
+		if not before+1 == after:
+			raise Exception('Inconsistent number of movies in XBMC library')
+
+def update_episodes_xbmc(path):
+	if XBMC_ENABLED == 'True':
+		log.info('Updating xbmc...')
+		episodes = acess_xbmc(XBMC_CMD_EPISODES)['result']['episodes']
+		before = len(episodes)
+		exist = [episode for episode in episodes if episode['file'] == path]
+		if exist:
+			raise Exception('Episode already in XBMC library')
+		acess_xbmc(XBMC_CMD_UPDATE)
+		time.sleep(0.2)
+		while acess_xbmc(XBMC_CMD_BUSY)['result']['library.isscanning']:
+			time.sleep(0.2)
+		episodes = acess_xbmc(XBMC_CMD_EPISODES)['result']['episodes']
+		exist = [episode for episode in episodes if episode['file'] == path]
+		if not exist:
+			raise Exception('Episode not added to XBMC library')
+		after = len(episodes)
+		if not before+1 == after:
+			raise Exception('Inconsistent number of episodes in XBMC library')
+
+def notify_xbmc(title, message, image): # quando erro, no log
+	acess_xbmc(XBMC_CMD_ALERT % (title, message, image))
 
 def send_email(subject, body):
 	if EMAIL_ENABLED == 'True':
@@ -335,7 +381,19 @@ def send_email(subject, body):
 ## PROCCESSING
 def process_movie():
 	log.info('Processing movie...')
-	# todo pause_torrents()
+	# pause torrents
+	pause_torrents()
+	# check disks space and remove torrents
+	try:
+		d1 = os.path.splitdrive(TORRENT_PATH)[0]
+		d2 = os.path.splitdrive(MOVIES_PATH)[0]
+		if disk_full(d1) or disk_full(d2):
+			remove_torrents()
+			if disk_full(d1) or disk_full(d2):
+				raise Exception('Disk %s or %s full' % (d1, d2))
+	except Exception, e:
+		log.warning(e.message)
+	# process files and data
 	try:
 		# get nfo and rar or video files from torrent directory
 		torrent_info = get_file(TORRENT_PATH, INFO_EXTENSIONS)
@@ -361,18 +419,32 @@ def process_movie():
 		log.error(e.message)
 	else:
 		try:
+			# update xbmc
+			update_movies_xbmc(movie_video_path)
+			notify_xbmc('New Movie', movie_title, PROGRAM_ICON)
 			# send email
 			body = generate_body(movie_title, movie_year, movie_imdb, movie_poster, movie_video_path)
 			send_email(EMAIL_SUBJECT_MOVIE % movie_title, body)
-			# update xbmc
-			update_xbmc(movie_video_path)
 		except Exception, e:
 			log.warning(e.message)
-	# todo start_torrents()
+	# start torrents
+	unpause_torrents()
 
 def process_episode():
 	log.info('Processing episode...')
-	# todo pause_torrents()
+	# pause torrents
+	pause_torrents()
+	# check disks space and remove torrents
+	try:
+		d1 = os.path.splitdrive(TORRENT_PATH)[0]
+		d2 = os.path.splitdrive(SERIES_PATH)[0]
+		if disk_full(d1) or disk_full(d2):
+			remove_torrents()
+			if disk_full(d1) or disk_full(d2):
+				raise Exception('Disk %s or %s full' % (d1, d2))
+	except Exception, e:
+		log.warning(e.message)
+	# process files and data
 	try:
 		# get rar or video files from torrent directory
 		torrent_video = get_file(TORRENT_PATH, VIDEO_EXTENSIONS+EXTRACT_EXTENSIONS)
@@ -401,45 +473,54 @@ def process_episode():
 		log.error(e.message)
 	else:
 		try:
+			# update xbmc
+			update_episodes_xbmc(serie_video_path)
+			notify_xbmc('New Episode', serie_title, PROGRAM_ICON)
 			# send email
 			serie_imdb = find_in_file(serie_info, REGEX_IMDB_URL)[0]
 			log.info('Imdb: %s' % serie_imdb)
 			serie_poster = find_in_webpage(IMDB_API_URL % serie_imdb, REGEX_IMDB_API_TITLE_YEAR_POSTER)[2]
 			body = generate_body(serie_title, '%sx%s'%(serie_season,serie_episode), serie_imdb, serie_poster, serie_video_path)
 			send_email(EMAIL_SUBJECT_EPISODE % serie_title, body)
-			# update xbmc
-			update_xbmc(serie_video_path)
 		except Exception, e:
 			log.warning(e.message)
-	# todo start_torrents()
-	
+	# start torrents
+	unpause_torrents()
+
 def process_unsorted():
 	log.info('Processing unsorted...')
-	# todo try?
-	send_email(EMAIL_SUBJECT_UNSORTED % TORRENT_TITLE, TORRENT_TITLE)
-
-# def process_space():
-	# log.info('Processing space...')
-	# if get_full_disks():
-		# remove_torrents()
-		# disks = get_full_disks()
-		# if disks:
-			# email raise Exception('Disks full: %s' % ', '.join(disks))
+	# check disks space and remove torrents
+	try:
+		d = os.path.splitdrive(TORRENT_PATH)[0]
+		if disk_full(d):
+			remove_torrents()
+			if disk_full(d):
+				raise Exception('Disk %s full' % d)
+	except Exception, e:
+		log.warning(e.message)
+	# inform user
+	try:
+		send_email(EMAIL_SUBJECT_UNSORTED % TORRENT_TITLE, TORRENT_TITLE)
+	except Exception, e:
+		log.warning(e.message)
 
 ## MAIN
-if ENABLED == 'True':
-	log = Logger(LOG_ENABLED, LOG_PATH)
-	log.info('Torrent label: %s' % TORRENT_LABEL)
-	log.info('Torrent title: %s' % TORRENT_TITLE)
-	log.info('Torrent path: %s' % TORRENT_PATH)
-	log.info('Torrent kind: %s' % TORRENT_KIND)
-	log.info('Torrent file: %s' % TORRENT_FILE)
-	log.info('Torrent hex: %s' % TORRENT_HEX)
-	# todo process_space()
-	if TORRENT_LABEL.startswith(MOVIES_LABEL):
-		process_movie()
-	elif TORRENT_LABEL.startswith(SERIES_LABEL):
-		process_episode()
-	else:
-		process_unsorted()
-	log.close()
+try:
+	if ENABLED == 'True':
+		log = Logger(LOG_ENABLED, LOG_PATH)
+		log.info('Torrent label: %s' % TORRENT_LABEL)
+		log.info('Torrent title: %s' % TORRENT_TITLE)
+		log.info('Torrent path: %s' % TORRENT_PATH)
+		log.info('Torrent kind: %s' % TORRENT_KIND)
+		log.info('Torrent file: %s' % TORRENT_FILE)
+		log.info('Torrent hex: %s' % TORRENT_HEX)
+		if TORRENT_LABEL.startswith(MOVIES_LABEL):
+			process_movie()
+		elif TORRENT_LABEL.startswith(SERIES_LABEL):
+			process_episode()
+		else:
+			process_unsorted()
+		log.close()
+except Exception, e:
+	Tkinter.Tk().wm_withdraw()
+	tkMessageBox.showerror(PROGRAM_NAME, 'CRITICAL ERROR\n' + TORRENT_TITLE + '\n' + e.message)
