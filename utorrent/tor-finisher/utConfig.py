@@ -23,7 +23,7 @@ try:
 	UTORRENT_PASS = SETTINGS.find('utorrent/server/password').text
 
 	# retrieve token from utorrent
-	print 'Connecting to uTorrent...'
+	print 'Connecting to uTorrent at %s:%s...' %(UTORRENT_HOST, UTORRENT_PORT)
 	s = requests.session()
 	AUTH = requests.auth.HTTPBasicAuth(UTORRENT_USER, UTORRENT_PASS)
 	URL = 'http://%s:%s/gui/token.html' % (UTORRENT_HOST, UTORRENT_PORT)
@@ -48,7 +48,7 @@ try:
 		raise Exception('Cant set setting in uTorrent')
 except Exception, e:
 	print e.message
-	time.sleep(10)
+	time.sleep(3)
 else:
 	print 'Sucess!'
-	time.sleep(5)
+	time.sleep(3)

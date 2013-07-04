@@ -91,11 +91,13 @@ EMAIL_LINK1 = 'http://m.imdb.com/title/%s/'
 EMAIL_LINK2 = 'http://%s:%s@%s:%s/jsonrpc?request={"jsonrpc":"2.0","method":"Player.Open","params":{"item":{"file":"%s"}},"id":1}' % (XBMC_USER, XBMC_PASS, XBMC_HOST, XBMC_PORT, '%s')
 INFO_CONTENT = 'http://akas.imdb.com/title/%s/'
 IMDB_API_URL = 'http://imdbapi.org/?id=%s&type=xml&plot=simple&episode=0&lang=en-US&aka=simple&release=simple&business=0&tech=0'
+TMDB_API_URL = 'http://api.themoviedb.org/3/movie/%s?api_key=7d67c745d7368d3046dcf716426ad79f'
+POSTER_URL = 'http://d3gtl9l2a4fn1j.cloudfront.net/t/p/w185%s'
 XBMC_URL = 'http://%s:%s/jsonrpc' % (XBMC_HOST, XBMC_PORT)
 UTORRENT_URL = 'http://%s:%s/gui/' % (UTORRENT_HOST, UTORRENT_PORT)
 UTORRENT_URL_TOKEN = '%stoken.html' % UTORRENT_URL
+REGEX_IMDB_API_POSTER = r'<poster>(.+)</poster>'
 REGEX_IMDB_URL = r'imdb\.com/title/(tt\d{7})'
-REGEX_IMDB_API_TITLE_YEAR_POSTER = r'<year>(\d{4})</year>.*<title>(.+)</title>.*<poster>(.+)</poster>'
 REGEX_SERIES_TITLE = r'[^%s]*%s([^%s]+)' % (LABEL_SEPARATOR, LABEL_SEPARATOR, LABEL_SEPARATOR)
 REGEX_SERIES_SEASON_EPISODE = r's0*(\d{1,2})e(\d{2})'
 REGEX_SERIES_SEASON_EPISODE_ALT = r'([1-9]*\d})x(\d{2})'
@@ -217,6 +219,8 @@ def extract(path, destination):
 
 def replace_special_chars(text):
 	text = unicodedata.normalize('NFKD', text).encode('ascii','ignore')
+	text = text.replace('\'', '')
+	text = text.replace('amp;', ' ')
 	text = re.sub('[^A-Za-z0-9]+', ' ', text)
 	text = re.sub('\s+', ' ', text)
 	text = text.strip()
@@ -238,7 +242,12 @@ def find_in_webpage(url, regex):
 	content = requests.get(url).text
 	return find_in_string(content, regex)
 
-def acess_utorrent(cmd):
+def find_in_tmdb(id):
+	headers = {'Accept': 'application/json'}
+	r = requests.get(TMDB_API_URL % id, headers=headers)
+	return r.json()
+
+def access_utorrent(cmd):
 	headers = {'content-type': 'application/json', 'user-agent': 'python-requests'}
 	auth = requests.auth.HTTPBasicAuth(UTORRENT_USER, UTORRENT_PASS)
 	r = requests.get(UTORRENT_URL_TOKEN, headers=headers, auth=auth)
@@ -249,7 +258,7 @@ def acess_utorrent(cmd):
 	r = requests.get(UTORRENT_URL, headers=headers, auth=auth, params=cmd, cookies=cookies)
 	return r.json()
 
-def acess_xbmc(cmd):
+def access_xbmc(cmd):
 	headers = {'content-type': 'application/json', 'user-agent': 'python-requests'}
 	auth = requests.auth.HTTPBasicAuth(XBMC_USER, XBMC_PASS)
 	params = {'request': cmd}
@@ -283,30 +292,30 @@ def generate_body(title, subtitle, imdb, poster, path):
 
 def pause_torrents():
 	log.info('Pausing torrents...')
-	j = acess_utorrent(UTORRENT_CMD_LIST)
+	j = access_utorrent(UTORRENT_CMD_LIST)
 	for t in j['torrents']:
 		if (not t[UTORRENT_INDEX_PERCENT] == 1000 and
 			t[UTORRENT_INDEX_STATUS] & UTORRENT_BITWISE_STARTED and
 			not t[UTORRENT_INDEX_STATUS] & UTORRENT_BITWISE_PAUSED):
 			hash = t[UTORRENT_INDEX_HASH]
 			cmd = {'action': 'pause', 'hash': hash}
-			acess_utorrent(cmd)
+			access_utorrent(cmd)
 
 def unpause_torrents():
 	log.info('Unpausing torrents...')
-	j = acess_utorrent(UTORRENT_CMD_LIST)
+	j = access_utorrent(UTORRENT_CMD_LIST)
 	for t in j['torrents']:
 		if (not t[UTORRENT_INDEX_PERCENT] == 1000 and
 			t[UTORRENT_INDEX_STATUS] & UTORRENT_BITWISE_PAUSED):
 			hash = t[UTORRENT_INDEX_HASH]
 			cmd = {'action': 'unpause', 'hash': hash}
-			acess_utorrent(cmd)
+			access_utorrent(cmd)
 
 def remove_torrents():
 	if UTORRENT_ENABLED == 'True':
 		log.info('Removing torrents...')
 		epoch = int(time.time() - int(UTORRENT_DAYS_OLDER)*24*60*60)
-		j = acess_utorrent(UTORRENT_CMD_LIST)
+		j = access_utorrent(UTORRENT_CMD_LIST)
 		for t in j['torrents']:
 			if (not t[UTORRENT_INDEX_NAME] == TORRENT_TITLE and
 				(t[UTORRENT_INDEX_LABEL].startswith(LABEL_MOVIES) or t[UTORRENT_INDEX_LABEL].startswith(LABEL_SERIES)) and
@@ -317,22 +326,22 @@ def remove_torrents():
 				(UTORRENT_COMPARATOR == 'greater' and t[UTORRENT_INDEX_RATIO] > UTORRENT_RATIO))):
 				hash = t[UTORRENT_INDEX_HASH]
 				cmd = {'action': 'removedata', 'hash': hash}
-				acess_utorrent(cmd)
+				access_utorrent(cmd)
 				log.info('Torrent deleted: %s' % t[UTORRENT_INDEX_NAME])
 
 def update_movies_xbmc(path):
 	if XBMC_ENABLED == 'True':
 		log.info('Updating xbmc...')
-		movies = acess_xbmc(XBMC_CMD_MOVIES)['result']['movies']
+		movies = access_xbmc(XBMC_CMD_MOVIES)['result']['movies']
 		before = len(movies)
 		exist = [movie for movie in movies if movie['file'] == path]
 		if exist:
 			raise Exception('Movie already in XBMC library')
-		acess_xbmc(XBMC_CMD_UPDATE)
+		access_xbmc(XBMC_CMD_UPDATE)
 		time.sleep(0.2)
-		while acess_xbmc(XBMC_CMD_BUSY)['result']['library.isscanning']:
+		while access_xbmc(XBMC_CMD_BUSY)['result']['library.isscanning']:
 			time.sleep(0.2)
-		movies = acess_xbmc(XBMC_CMD_MOVIES)['result']['movies']
+		movies = access_xbmc(XBMC_CMD_MOVIES)['result']['movies']
 		exist = [movie for movie in movies if movie['file'] == path]
 		if not exist:
 			raise Exception('Movie not added to XBMC library')
@@ -343,16 +352,16 @@ def update_movies_xbmc(path):
 def update_episodes_xbmc(path):
 	if XBMC_ENABLED == 'True':
 		log.info('Updating xbmc...')
-		episodes = acess_xbmc(XBMC_CMD_EPISODES)['result']['episodes']
+		episodes = access_xbmc(XBMC_CMD_EPISODES)['result']['episodes']
 		before = len(episodes)
 		exist = [episode for episode in episodes if episode['file'] == path]
 		if exist:
 			raise Exception('Episode already in XBMC library')
-		acess_xbmc(XBMC_CMD_UPDATE)
+		access_xbmc(XBMC_CMD_UPDATE)
 		time.sleep(0.2)
-		while acess_xbmc(XBMC_CMD_BUSY)['result']['library.isscanning']:
+		while access_xbmc(XBMC_CMD_BUSY)['result']['library.isscanning']:
 			time.sleep(0.2)
-		episodes = acess_xbmc(XBMC_CMD_EPISODES)['result']['episodes']
+		episodes = access_xbmc(XBMC_CMD_EPISODES)['result']['episodes']
 		exist = [episode for episode in episodes if episode['file'] == path]
 		if not exist:
 			raise Exception('Episode not added to XBMC library')
@@ -360,8 +369,8 @@ def update_episodes_xbmc(path):
 		if not before+1 == after:
 			raise Exception('Inconsistent number of episodes in XBMC library')
 
-def notify_xbmc(title, message, image): # quando erro, no log
-	acess_xbmc(XBMC_CMD_ALERT % (title, message, image))
+def notify_xbmc(title, message, image):
+	access_xbmc(XBMC_CMD_ALERT % (title, message, image))
 
 def send_email(subject, body):
 	if EMAIL_ENABLED == 'True':
@@ -403,8 +412,10 @@ def process_movie():
 		# get imdb from nfo
 		movie_imdb = find_in_file(torrent_info, REGEX_IMDB_URL)[0]
 		log.info('Imdb: %s' % movie_imdb)
-		# get title, year and poster from imdb
-		movie_year, movie_title, movie_poster = find_in_webpage(IMDB_API_URL % movie_imdb, REGEX_IMDB_API_TITLE_YEAR_POSTER)
+		# get title and year from tmdb
+		tmdb = find_in_tmdb(movie_imdb)
+		movie_title = tmdb['original_title']
+		movie_year = tmdb['release_date'][:4]
 		log.info('Title: %s | Year: %s' % (movie_title, movie_year))
 		movie_title = replace_special_chars(movie_title)
 		# create directory in library
@@ -413,7 +424,7 @@ def process_movie():
 		movie_video_path = extract(torrent_video, movie_path)
 		log.info('Library video file: %s' % movie_video_path)
 		# create nfo in library
-		movie_info_path = create_file(INFO_CONTENT%movie_imdb, movie_path, MOVIES_INFO_FILENAME)
+		movie_info_path = create_file(INFO_CONTENT % movie_imdb, movie_path, MOVIES_INFO_FILENAME)
 		log.info('Library info file: %s' % movie_info_path)
 	except Exception, e:
 		log.error(e.message)
@@ -423,6 +434,7 @@ def process_movie():
 			update_movies_xbmc(movie_video_path)
 			notify_xbmc('New Movie', movie_title, PROGRAM_ICON)
 			# send email
+			movie_poster = POSTER_URL % tmdb['poster_path']
 			body = generate_body(movie_title, movie_year, movie_imdb, movie_poster, movie_video_path)
 			send_email(EMAIL_SUBJECT_MOVIE % movie_title, body)
 		except Exception, e:
@@ -479,7 +491,7 @@ def process_episode():
 			# send email
 			serie_imdb = find_in_file(serie_info, REGEX_IMDB_URL)[0]
 			log.info('Imdb: %s' % serie_imdb)
-			serie_poster = find_in_webpage(IMDB_API_URL % serie_imdb, REGEX_IMDB_API_TITLE_YEAR_POSTER)[2]
+			serie_poster = find_in_webpage(IMDB_API_URL % serie_imdb, REGEX_IMDB_API_POSTER)
 			body = generate_body(serie_title, '%sx%s'%(serie_season,serie_episode), serie_imdb, serie_poster, serie_video_path)
 			send_email(EMAIL_SUBJECT_EPISODE % serie_title, body)
 		except Exception, e:
