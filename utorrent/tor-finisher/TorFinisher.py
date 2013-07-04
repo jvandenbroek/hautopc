@@ -119,6 +119,7 @@ UTORRENT_INDEX_ADDEDON = 23
 UTORRENT_INDEX_PATH = 26
 UTORRENT_BITWISE_STARTED = 1
 UTORRENT_BITWISE_PAUSED = 32
+UTORRENT_BITWISE_QUEUED = 64
 UNRAR_OK = 'All OK'
 MINIMUM_FREE_SPACE = 20
 
@@ -142,6 +143,10 @@ class Logger:
 		print 'Finished in %s seconds!' % duration
 		if self.enabled == 'True':
 			self.f.write('Finished in %s seconds!' % duration)
+			self.f.close()
+	
+	def force_close(self):
+		if self.enabled == 'True':
 			self.f.close()
 
 	def __time(self):
@@ -281,7 +286,7 @@ def test_episode(path, episode):
 		raise Exception('Episode %s already exists in: %s' % (episode, path))
 
 def generate_body(title, subtitle, imdb, poster, path):
-	body = '<div style="width:300px;margin:0px auto;text-align:center;"><span style="display:block;margin-bottom:2px;font-size:10px;color:gray;">%TORRENT%</span><span style="display:block;margin-bottom:0px;font-size:20px;font-weight:bold;">%TITLE%</span><span style="display:block;margin-bottom:2px;font-size:12px;font-weight:bold;">%SUBTITLE%</span><table width="214" height="317" cellspacing="0" cellpadding="0" border="0" style="margin:0px auto;border-collapse:collapse;" background="%POSTER%"><tr height="253"><td><a href="%LINK1%"><div style="width:214px;height:250px;"></div></a></td></tr><tr height="64"><td style="background-color:rgba(222,222,222,0.5);"><a href="%LINK2%"><img width="48" height="48" style="padding-top:8px;padding-bottom:4px;padding-left:83px;padding-right:83px;" src="http://mba.terry.uga.edu/_assets/img/playButton2.png" alt="play"/></a></td></tr></table></div>'
+	body = '<div style="width:300px;margin:0px auto;text-align:center;"><span style="display:block;margin-bottom:2px;font-size:10px;color:gray;">%TORRENT%</span><span style="display:block;margin-bottom:0px;font-size:20px;font-weight:bold;">%TITLE%</span><span style="display:block;margin-bottom:2px;font-size:12px;font-weight:bold;">%SUBTITLE%</span><table width="185" height="278" cellspacing="0" cellpadding="0" border="0" style="margin:0px auto;border-collapse:collapse;background-color:gray" background="%POSTER%"><tr height="222"><td><a href="%LINK1%"><div style="width:185px;height:220px;"></div></a></td></tr><tr height="56"><td style="background-color:rgba(222,222,222,0.5);"><a href="%LINK2%"><img width="41" height="41" style="padding-top:7px;padding-bottom:3px;padding-left:72px;padding-right:72px;" src="http://mba.terry.uga.edu/_assets/img/playButton2.png" alt="play"/></a></td></tr></table></div>'
 	body = body.replace('%TORRENT%', TORRENT_TITLE)
 	body = body.replace('%TITLE%', title)
 	body = body.replace('%SUBTITLE%', subtitle)
@@ -295,7 +300,7 @@ def pause_torrents():
 	j = access_utorrent(UTORRENT_CMD_LIST)
 	for t in j['torrents']:
 		if (not t[UTORRENT_INDEX_PERCENT] == 1000 and
-			t[UTORRENT_INDEX_STATUS] & UTORRENT_BITWISE_STARTED and
+			t[UTORRENT_INDEX_STATUS] & UTORRENT_BITWISE_QUEUED and
 			not t[UTORRENT_INDEX_STATUS] & UTORRENT_BITWISE_PAUSED):
 			hash = t[UTORRENT_INDEX_HASH]
 			cmd = {'action': 'pause', 'hash': hash}
@@ -533,6 +538,8 @@ try:
 		else:
 			process_unsorted()
 		log.close()
+		time.sleep(3)
 except Exception, e:
+	log.force_close()
 	Tkinter.Tk().wm_withdraw()
 	tkMessageBox.showerror(PROGRAM_NAME, 'CRITICAL ERROR\n' + TORRENT_TITLE + '\n' + e.message)
