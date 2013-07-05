@@ -144,10 +144,6 @@ class Logger:
 		if self.enabled == 'True':
 			self.f.write('Finished in %s seconds!' % duration)
 			self.f.close()
-	
-	def force_close(self):
-		if self.enabled == 'True':
-			self.f.close()
 
 	def __time(self):
 		return time.strftime('%Y/%m/%d %H:%M.%S', time.localtime())
@@ -540,6 +536,5 @@ try:
 		log.close()
 		time.sleep(3)
 except Exception, e:
-	log.force_close()
 	Tkinter.Tk().wm_withdraw()
 	tkMessageBox.showerror(PROGRAM_NAME, 'CRITICAL ERROR\n' + TORRENT_TITLE + '\n' + e.message)
