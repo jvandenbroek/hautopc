@@ -24,7 +24,7 @@ else:
 	PROGRAM_PATH = os.path.dirname(__file__)
 
 ## ARGUMENTS
-# "C:\path\to\TorFinisher.exe" "%L" "%N" "%D" "%K" "%F" "%I"
+# START /MIN "C:\path\to\TorFinisher.exe" "%L" "%N" "%D" "%K" "%F" "%I"
 if not len(sys.argv) == 7:
 	Tkinter.Tk().wm_withdraw()
 	tkMessageBox.showerror(PROGRAM_NAME, 'Incorrect number of arguments')
@@ -214,6 +214,7 @@ def extract(path, destination):
 		shutil.copy(path, destination)
 		tmp_path = os.path.join(destination, os.path.basename(path))
 	name = TORRENT_TITLE + os.path.splitext(tmp_path)[1]
+	name = name.replace(' ','.')
 	path = os.path.join(destination, name)
 	os.rename(tmp_path, path)
 	return path
