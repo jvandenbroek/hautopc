@@ -41,7 +41,7 @@ try:
 	# set setting in utorrent
 	print 'Updating "Run when finish" setting in uTorrent...'
 	URL = 'http://%s:%s/gui/' % (UTORRENT_HOST, UTORRENT_PORT)
-	LINE = 'START /MIN "' + os.path.join(PROGRAM_PATH, 'TorFinisher.exe') + '" "%L" "%N" "%D" "%K" "%F" "%I"'
+	LINE = '"' + os.path.join(PROGRAM_PATH, 'TorFinisher.exe') + '" "%L" "%N" "%D" "%K" "%F" "%I"'
 	PARAMS = {'token': TOKEN, 'action': 'setsetting', 's': 'finish_cmd', 'v': LINE}
 	r = s.get(URL, headers=HEADERS, auth=AUTH, params=PARAMS)
 	if not 'build' in r.json():

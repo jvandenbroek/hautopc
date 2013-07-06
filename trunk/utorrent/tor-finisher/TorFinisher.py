@@ -24,7 +24,7 @@ else:
 	PROGRAM_PATH = os.path.dirname(__file__)
 
 ## ARGUMENTS
-# START /MIN "C:\path\to\TorFinisher.exe" "%L" "%N" "%D" "%K" "%F" "%I"
+# "C:\path\to\TorFinisher.exe" "%L" "%N" "%D" "%K" "%F" "%I"
 if not len(sys.argv) == 7:
 	Tkinter.Tk().wm_withdraw()
 	tkMessageBox.showerror(PROGRAM_NAME, 'Incorrect number of arguments')
