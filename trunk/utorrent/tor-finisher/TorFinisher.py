@@ -100,7 +100,7 @@ REGEX_IMDB_API_POSTER = r'<poster>(.+)</poster>'
 REGEX_IMDB_URL = r'imdb\.com/title/(tt\d{7})'
 REGEX_SERIES_TITLE = r'[^%s]*%s([^%s]+)' % (LABEL_SEPARATOR, LABEL_SEPARATOR, LABEL_SEPARATOR)
 REGEX_SERIES_SEASON_EPISODE = r's0*(\d{1,2})e(\d{2})'
-REGEX_SERIES_SEASON_EPISODE_ALT = r'([1-9]*\d})x(\d{2})'
+REGEX_SERIES_SEASON_EPISODE_ALT = r'([1-9]*\d)x(\d{2})'
 REGEX_UTORRENT_TOKEN = r'<div[^>]*id=[\"\']token[\"\'][^>]*>([^<]*)</div>'
 XBMC_CMD_MOVIES = '{"jsonrpc":"2.0","method":"VideoLibrary.GetMovies","params":{"properties":["file"]},"id":1}'
 XBMC_CMD_EPISODES = '{"jsonrpc":"2.0","method":"VideoLibrary.GetEpisodes","params":{"properties":["file"]},"id":1}'
@@ -493,7 +493,7 @@ def process_episode():
 			# send email
 			serie_imdb = find_in_file(serie_info, REGEX_IMDB_URL)[0]
 			log.info('Imdb: %s' % serie_imdb)
-			serie_poster = find_in_webpage(IMDB_API_URL % serie_imdb, REGEX_IMDB_API_POSTER)
+			serie_poster = find_in_webpage(IMDB_API_URL % serie_imdb, REGEX_IMDB_API_POSTER)[0]
 			body = generate_body(serie_title, '%sx%s'%(serie_season,serie_episode), serie_imdb, serie_poster, serie_video_path)
 			send_email(EMAIL_SUBJECT_EPISODE % serie_title, body)
 		except Exception, e:
