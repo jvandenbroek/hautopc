@@ -16,7 +16,7 @@ from lib import disks
 
 ## INFO
 PROGRAM_NAME = 'Tor Finisher'
-PROGRAM_VERSION = '1.0.0'
+PROGRAM_VERSION = '1.0.2'
 PROGRAM_ICON = 'https://code.google.com/p/hautopc/source/browse/trunk/utorrent/tor-finisher/logo.png'
 if getattr(sys, 'frozen', False):
 	PROGRAM_PATH = os.path.dirname(sys.executable)
@@ -320,7 +320,7 @@ def remove_torrents():
 		j = access_utorrent(UTORRENT_CMD_LIST)
 		for t in j['torrents']:
 			if (not t[UTORRENT_INDEX_NAME] == TORRENT_TITLE and
-				(t[UTORRENT_INDEX_LABEL].startswith(LABEL_MOVIES) or t[UTORRENT_INDEX_LABEL].startswith(LABEL_SERIES)) and
+				(t[UTORRENT_INDEX_LABEL].startswith(MOVIES_LABEL) or t[UTORRENT_INDEX_LABEL].startswith(SERIES_LABEL)) and
 				t[UTORRENT_INDEX_PERCENT] == 1000 and
 				t[UTORRENT_INDEX_UPSPEED] == 0 and
 				t[UTORRENT_INDEX_ADDEDON] < epoch and
