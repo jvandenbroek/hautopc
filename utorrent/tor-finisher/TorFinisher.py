@@ -313,13 +313,11 @@ def unpause_torrents():
 			cmd = {'action': 'unpause', 'hash': hash}
 			access_utorrent(cmd)
 
-			
-			UTORRENT ENVIA CENAS COMO STRING ? ..
-			
 def remove_torrents():
 	if UTORRENT_ENABLED == 'True':
-		#log.info('Removing torrents...')
+		log.info('Removing torrents...')
 		epoch = int(time.time() - int(UTORRENT_DAYS_OLDER)*24*60*60)
+		ratio = int(float(UTORRENT_RATIO.replace(',','.')) * 1000)
 		j = access_utorrent(UTORRENT_CMD_LIST)
 		for t in j['torrents']:
 			if ((not t[UTORRENT_INDEX_NAME] == TORRENT_TITLE) and
@@ -327,13 +325,12 @@ def remove_torrents():
 				t[UTORRENT_INDEX_PERCENT] == 1000 and
 				t[UTORRENT_INDEX_UPSPEED] == 0 and
 				t[UTORRENT_INDEX_ADDEDON] < epoch and
-				((UTORRENT_COMPARATOR == 'lesser' and t[UTORRENT_INDEX_RATIO] < UTORRENT_RATIO) or
-				(UTORRENT_COMPARATOR == 'greater' and t[UTORRENT_INDEX_RATIO] > UTORRENT_RATIO))):
+				((UTORRENT_COMPARATOR == 'lesser' and t[UTORRENT_INDEX_RATIO] < ratio) or
+				(UTORRENT_COMPARATOR == 'greater' and t[UTORRENT_INDEX_RATIO] > ratio))):
 				hash = t[UTORRENT_INDEX_HASH]
-				print t[2]
-				#cmd = {'action': 'removedata', 'hash': hash}
-				#access_utorrent(cmd)
-				#log.info('Torrent deleted: %s' % t[UTORRENT_INDEX_NAME])
+				cmd = {'action': 'removedata', 'hash': hash}
+				access_utorrent(cmd)
+				log.info('Torrent deleted: %s' % t[UTORRENT_INDEX_NAME])
 
 def update_movies_xbmc(path):
 	if XBMC_ENABLED == 'True':
