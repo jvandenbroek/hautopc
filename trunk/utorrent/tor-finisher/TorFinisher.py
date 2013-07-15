@@ -16,8 +16,8 @@ from lib import disks
 
 ## INFO
 PROGRAM_NAME = 'Tor Finisher'
-PROGRAM_VERSION = '1.0.2'
-PROGRAM_ICON = 'https://code.google.com/p/hautopc/source/browse/trunk/utorrent/tor-finisher/logo.png'
+PROGRAM_VERSION = '1.0.3'
+PROGRAM_ICON = 'https://hautopc.googlecode.com/svn/trunk/utorrent/tor-finisher/logo.png'
 if getattr(sys, 'frozen', False):
 	PROGRAM_PATH = os.path.dirname(sys.executable)
 else:
@@ -106,7 +106,7 @@ XBMC_CMD_MOVIES = '{"jsonrpc":"2.0","method":"VideoLibrary.GetMovies","params":{
 XBMC_CMD_EPISODES = '{"jsonrpc":"2.0","method":"VideoLibrary.GetEpisodes","params":{"properties":["file"]},"id":1}'
 XBMC_CMD_UPDATE = '{"jsonrpc":"2.0","method":"VideoLibrary.Scan","id":1}'
 XBMC_CMD_BUSY = '{"jsonrpc":"2.0","method":"XBMC.GetInfoBooleans","params":{ "booleans": ["library.isscanning"] },"id":1}'
-XBMC_CMD_ALERT = '{"jsonrpc":"2.0","method":"GUI.ShowNotification","params":{"title":"%s","message":"%s","image":"%s","displaytime":7000},"id":1}'
+XBMC_CMD_ALERT = '{"jsonrpc":"2.0","method":"GUI.ShowNotification","params":{"title":"%s","message":"%s","image":"%s","displaytime":5000},"id":1}'
 UTORRENT_CMD_LIST = {'list': 1}
 UTORRENT_INDEX_HASH = 0
 UTORRENT_INDEX_STATUS = 1
