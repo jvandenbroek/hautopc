@@ -16,7 +16,7 @@ from lib import disks
 
 ## INFO
 PROGRAM_NAME = 'Tor Finisher'
-PROGRAM_VERSION = '1.0.3'
+PROGRAM_VERSION = '1.0.4'
 PROGRAM_ICON = 'https://hautopc.googlecode.com/svn/trunk/utorrent/tor-finisher/logo.png'
 if getattr(sys, 'frozen', False):
 	PROGRAM_PATH = os.path.dirname(sys.executable)
@@ -77,7 +77,6 @@ LOG_PATH = os.path.join(PROGRAM_PATH, 'log', '%s.log' % TORRENT_TITLE)
 MOVIES_FOLDERNAME = '%s (%s)'
 SERIES_FOLDERNAME = '%s'
 SEASON_FOLDERNAME = 'Season %s'
-SERIES_INFO_FILENAME = 'tvshow.nfo'
 MOVIES_INFO_FILENAME = 'movie.nfo'
 INFO_EXTENSIONS = ['.nfo']
 VIDEO_EXTENSIONS = ['.avi', '.mkv', '.mp4']
@@ -205,9 +204,9 @@ def extract(path, destination):
 	if os.path.splitext(path)[1] in EXTRACT_EXTENSIONS:
 		log.info('Extracting...')
 		os.system('""%s" x "%s" "%s\\"' % (UNRAR_PATH, path, destination))
-		f = [os.path.join(destination, f) for f in os.listdir(destination) if os.path.isfile(os.path.join(destination, f)) and not os.path.basename(f) == SERIES_INFO_FILENAME]
+		f = [os.path.join(destination, f) for f in os.listdir(destination) if os.path.isfile(os.path.join(destination, f)) and os.path.splitext(f)[1] in VIDEO_EXTENSIONS]
 		if not len(f) == 1:
-			raise Exception('Extracted multiple files in: %s' % destination)
+			raise Exception('Extracted file inconsistent in: %s' % destination)
 		tmp_path = os.path.join(destination, os.path.basename(f[0]))
 	else:
 		log.info('Copying...')
