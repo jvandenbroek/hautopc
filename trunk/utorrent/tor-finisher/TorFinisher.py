@@ -16,7 +16,7 @@ from lib import disks
 
 ## INFO
 PROGRAM_NAME = 'Tor Finisher'
-PROGRAM_VERSION = '1.0.4'
+PROGRAM_VERSION = '1.0.5'
 PROGRAM_ICON = 'https://hautopc.googlecode.com/svn/trunk/utorrent/tor-finisher/logo.png'
 if getattr(sys, 'frozen', False):
 	PROGRAM_PATH = os.path.dirname(sys.executable)
@@ -24,17 +24,16 @@ else:
 	PROGRAM_PATH = os.path.dirname(__file__)
 
 ## ARGUMENTS
-# "C:\path\to\TorFinisher.exe" "%L" "%N" "%D" "%K" "%F" "%I"
-if not len(sys.argv) == 7:
+# "C:\path\to\TorFinisher.exe" "%L" "%N" "%D" "%F" "%I"
+if not len(sys.argv) == 6:
 	Tkinter.Tk().wm_withdraw()
 	tkMessageBox.showerror(PROGRAM_NAME, 'Incorrect number of arguments')
 	sys.exit()
 TORRENT_LABEL = sys.argv[1]
 TORRENT_TITLE = sys.argv[2]
 TORRENT_PATH = sys.argv[3]
-TORRENT_KIND = sys.argv[4]
-TORRENT_FILE = sys.argv[5]
-TORRENT_HEX = sys.argv[6]
+TORRENT_FILE = sys.argv[4]
+TORRENT_HEX = sys.argv[5]
 
 ## SETTINGS
 path = os.path.join(PROGRAM_PATH, 'settings.xml')
@@ -525,7 +524,6 @@ try:
 		log.info('Torrent label: %s' % TORRENT_LABEL)
 		log.info('Torrent title: %s' % TORRENT_TITLE)
 		log.info('Torrent path: %s' % TORRENT_PATH)
-		log.info('Torrent kind: %s' % TORRENT_KIND)
 		log.info('Torrent file: %s' % TORRENT_FILE)
 		log.info('Torrent hex: %s' % TORRENT_HEX)
 		if TORRENT_LABEL.startswith(MOVIES_LABEL):
