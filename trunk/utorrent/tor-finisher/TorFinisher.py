@@ -16,12 +16,9 @@ from lib import disks
 
 ## INFO
 PROGRAM_NAME = 'Tor Finisher'
-PROGRAM_VERSION = '1.0.5'
+PROGRAM_VERSION = '1.1.0'
 PROGRAM_ICON = 'https://hautopc.googlecode.com/svn/trunk/utorrent/tor-finisher/logo.png'
-if getattr(sys, 'frozen', False):
-	PROGRAM_PATH = os.path.dirname(sys.executable)
-else:
-	PROGRAM_PATH = os.path.dirname(__file__)
+PROGRAM_DATA_PATH = os.path.join(os.environ['APPDATA'], PROGRAM_NAME)
 
 ## ARGUMENTS
 # "C:\path\to\TorFinisher.exe" "%L" "%N" "%D" "%F" "%I"
@@ -36,7 +33,7 @@ TORRENT_FILE = sys.argv[4]
 TORRENT_HEX = sys.argv[5]
 
 ## SETTINGS
-path = os.path.join(PROGRAM_PATH, 'settings.xml')
+path = os.path.join(PROGRAM_DATA_PATH, 'settings.xml')
 if not os.path.exists(path):
 	Tkinter.Tk().wm_withdraw()
 	tkMessageBox.showerror(PROGRAM_NAME, 'Settings not found\n%s' % path)
@@ -51,7 +48,7 @@ MOVIES_LABEL = settings.find('processing/utorrent/movieslabel').text
 SERIES_LABEL = settings.find('processing/utorrent/serieslabel').text
 LABEL_SEPARATOR = settings.find('processing/utorrent/labelseparator').text
 UNRAR_PATH = settings.find('processing/unrar/location').text
-LOG_ENABLED = settings.find('processing/log/enabled').text
+UTORRENT_VERSION = settings.find('utorrent/version').text
 UTORRENT_HOST = settings.find('utorrent/server/host').text
 UTORRENT_PORT = settings.find('utorrent/server/port').text
 UTORRENT_USER = settings.find('utorrent/server/username').text
@@ -72,7 +69,7 @@ XBMC_HOST = settings.find('xbmc/server/host').text
 XBMC_PORT = settings.find('xbmc/server/port').text
 XBMC_USER = settings.find('xbmc/server/username').text
 XBMC_PASS = settings.find('xbmc/server/password').text
-LOG_PATH = os.path.join(PROGRAM_PATH, 'log', '%s.log' % TORRENT_TITLE)
+LOG_PATH = os.path.join(PROGRAM_DATA_PATH, 'log', '%s.log' % TORRENT_TITLE)
 MOVIES_FOLDERNAME = '%s (%s)'
 SERIES_FOLDERNAME = '%s'
 SEASON_FOLDERNAME = 'Season %s'
@@ -124,43 +121,37 @@ MINIMUM_FREE_SPACE = 20
 ## CLASS
 class Logger:
 	S = '%s | %s | %s'
-	def __init__(self, enabled, path):
+	def __init__(self, path):
 		self.start = time.time()
-		self.enabled = enabled
 		self.path = path
 		print PROGRAM_NAME + ' ' + PROGRAM_VERSION
-		if self.enabled == 'True':
-			d = os.path.dirname(path)
-			if not os.path.exists(d):
-				os.mkdir(d)
-			self.f = open(path, 'a')
-			self.f.write(PROGRAM_NAME + ' ' + PROGRAM_VERSION + '\n')
+		d = os.path.dirname(path)
+		if not os.path.exists(d):
+			os.mkdir(d)
+		self.f = open(path, 'a')
+		self.f.write(PROGRAM_NAME + ' ' + PROGRAM_VERSION + '\n')
 
 	def close(self):
 		duration = int(time.time() - self.start)
 		print 'Finished in %s seconds!' % duration
-		if self.enabled == 'True':
-			self.f.write('Finished in %s seconds!' % duration)
-			self.f.close()
+		self.f.write('Finished in %s seconds!' % duration)
+		self.f.close()
 
 	def __time(self):
 		return time.strftime('%Y/%m/%d %H:%M.%S', time.localtime())
 
 	def info(self, msg):
 		print self.S % (self.__time(), 'INFO', msg)
-		if self.enabled == 'True':
-			self.f.write('%s | INFO | %s\n' % (self.__time(), msg))
+		self.f.write('%s | INFO | %s\n' % (self.__time(), msg))
 
 	def warning(self, msg):
 		print self.S % (self.__time(), 'WARNING', msg)
-		if self.enabled == 'True':
-			self.f.write('%s | WARNING | %s\n' % (self.__time(), msg))
+		self.f.write('%s | WARNING | %s\n' % (self.__time(), msg))
 		send_email(EMAIL_SUBJECT_WARNING % TORRENT_TITLE, msg)
 
 	def error(self, msg):
 		print self.S % (self.__time(), 'ERROR', msg)
-		if self.enabled == 'True':
-			self.f.write('%s | ERROR | %s\n' % (self.__time(), msg))
+		self.f.write('%s | ERROR | %s\n' % (self.__time(), msg))
 		send_email(EMAIL_SUBJECT_ERROR % TORRENT_TITLE, msg)
 
 ## UTIL
@@ -252,10 +243,13 @@ def access_utorrent(cmd):
 	auth = requests.auth.HTTPBasicAuth(UTORRENT_USER, UTORRENT_PASS)
 	r = requests.get(UTORRENT_URL_TOKEN, headers=headers, auth=auth)
 	token = find_in_string(r.text, REGEX_UTORRENT_TOKEN)[0]
-	guid = r.cookies['GUID']
-	cookies = dict(GUID = guid)
 	cmd.update({'token': token})
-	r = requests.get(UTORRENT_URL, headers=headers, auth=auth, params=cmd, cookies=cookies)
+	if UTORRENT_VERSION == '3':
+		guid = r.cookies['GUID']
+		cookies = dict(GUID = guid)
+		r = requests.get(UTORRENT_URL, headers=headers, auth=auth, params=cmd, cookies=cookies)
+	else:
+		r = requests.get(UTORRENT_URL, headers=headers, auth=auth, params=cmd)
 	return r.json()
 
 def access_xbmc(cmd):
@@ -520,7 +514,7 @@ def process_unsorted():
 ## MAIN
 try:
 	if ENABLED == 'True':
-		log = Logger(LOG_ENABLED, LOG_PATH)
+		log = Logger(LOG_PATH)
 		log.info('Torrent label: %s' % TORRENT_LABEL)
 		log.info('Torrent title: %s' % TORRENT_TITLE)
 		log.info('Torrent path: %s' % TORRENT_PATH)

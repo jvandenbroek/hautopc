@@ -13,7 +13,7 @@ try:
 		PROGRAM_PATH = os.path.dirname(__file__)
 
 	# parse settings from file
-	SETTINGS_PATH = os.path.join(PROGRAM_PATH, 'settings.xml')
+	SETTINGS_PATH = os.path.join(os.environ['APPDATA'], 'Tor Finisher', 'settings.xml')
 	if not os.path.exists(SETTINGS_PATH):
 		raise Exception('Settings file not found (%s)' % SETTINGS_PATH)
 	SETTINGS = xml.parse(SETTINGS_PATH).getroot()
@@ -51,4 +51,4 @@ except Exception, e:
 	time.sleep(3)
 else:
 	print 'Sucess!'
-	time.sleep(3)
+	time.sleep(2)
