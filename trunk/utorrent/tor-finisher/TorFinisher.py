@@ -16,7 +16,7 @@ from lib import disks
 
 ## INFO
 PROGRAM_NAME = 'Tor Finisher'
-PROGRAM_VERSION = '1.1.0'
+PROGRAM_VERSION = '1.1.1'
 PROGRAM_ICON = 'https://hautopc.googlecode.com/svn/trunk/utorrent/tor-finisher/logo.png'
 PROGRAM_DATA_PATH = os.path.join(os.environ['APPDATA'], PROGRAM_NAME)
 
@@ -82,6 +82,7 @@ EMAIL_SUBJECT_EPISODE = 'NEW EPISODE: %s'
 EMAIL_SUBJECT_UNSORTED = 'NEW: %s'
 EMAIL_SUBJECT_ERROR = 'ERROR: %s'
 EMAIL_SUBJECT_WARNING = 'WARNING: %s'
+EMAIL_SUBJECT_WARNING_DISKS = EMAIL_SUBJECT_WARNING % 'Disk(s) full'
 EMAIL_LINK1 = 'http://m.imdb.com/title/%s/'
 EMAIL_LINK2 = 'http://%s:%s@%s:%s/jsonrpc?request={"jsonrpc":"2.0","method":"Player.Open","params":{"item":{"file":"%s"}},"id":1}' % (XBMC_USER, XBMC_PASS, XBMC_HOST, XBMC_PORT, '%s')
 INFO_CONTENT = 'http://akas.imdb.com/title/%s/'
@@ -147,12 +148,10 @@ class Logger:
 	def warning(self, msg):
 		print self.S % (self.__time(), 'WARNING', msg)
 		self.f.write('%s | WARNING | %s\n' % (self.__time(), msg))
-		send_email(EMAIL_SUBJECT_WARNING % TORRENT_TITLE, msg)
 
 	def error(self, msg):
 		print self.S % (self.__time(), 'ERROR', msg)
 		self.f.write('%s | ERROR | %s\n' % (self.__time(), msg))
-		send_email(EMAIL_SUBJECT_ERROR % TORRENT_TITLE, msg)
 
 ## UTIL
 def get_file(path, extensions, not_sample=True):
@@ -269,8 +268,9 @@ def disk_full(disk):
 		return True
 
 ## SUPL
-def test_episode(path, episode):
-	f = [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f)) and ('E%s'%episode in os.path.basename(f).upper() or 'X%s'%episode in os.path.basename(f).upper())]
+def test_episode(path, season, episode):
+	regex = r'%se%s|%sx%s' % (season, episode, season, episode)
+	f = [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f)) and re.match(regex, os.path.basename(f), re.IGNORECASE)]
 	if not len(f) == 0:
 		raise Exception('Episode %s already exists in: %s' % (episode, path))
 
@@ -368,27 +368,31 @@ def notify_xbmc(title, message, image):
 	access_xbmc(XBMC_CMD_ALERT % (title, message, image))
 
 def send_email(subject, body):
-	if EMAIL_ENABLED == 'True':
-		log.info('Sending email...')
-		msg = MIMEMultipart('alternative')
-		msg['Subject'] = subject
-		msg['From'] = EMAIL_FROM
-		msg['To'] = ', '.join(EMAIL_TOS)
-		msg.attach(MIMEText(body, 'html'))
-		s = SMTP(EMAIL_HOST, EMAIL_PORT)
-		s.starttls()
-		s.login(EMAIL_USER, EMAIL_PASS)
-		s.sendmail(EMAIL_FROM, EMAIL_TOS, msg.as_string())
-		s.quit()
-		log.info('Email sent to: %s' % ', '.join(EMAIL_TOS))
+	try:
+		if EMAIL_ENABLED == 'True':
+			log.info('Sending email...')
+			msg = MIMEMultipart('alternative')
+			msg['Subject'] = subject
+			msg['From'] = EMAIL_FROM
+			msg['To'] = ', '.join(EMAIL_TOS)
+			msg.attach(MIMEText(body, 'html'))
+			s = SMTP(EMAIL_HOST, EMAIL_PORT)
+			s.starttls()
+			s.login(EMAIL_USER, EMAIL_PASS)
+			s.sendmail(EMAIL_FROM, EMAIL_TOS, msg.as_string())
+			s.quit()
+			log.info('Email sent to: %s' % ', '.join(EMAIL_TOS))
+	except Exception, e:
+		Tkinter.Tk().wm_withdraw()
+		tkMessageBox.showerror(PROGRAM_NAME, 'Coulnt send email, please see log\n' + TORRENT_TITLE)
 
 ## PROCCESSING
 def process_movie():
 	log.info('Processing movie...')
 	# pause torrents
 	pause_torrents()
-	# check disks space and remove torrents
 	try:
+		# check disks space and remove torrents
 		d1 = os.path.splitdrive(TORRENT_PATH)[0]
 		d2 = os.path.splitdrive(MOVIES_PATH)[0]
 		if disk_full(d1) or disk_full(d2):
@@ -397,6 +401,7 @@ def process_movie():
 				raise Exception('Disk %s or %s full' % (d1, d2))
 	except Exception, e:
 		log.warning(e.message)
+		send_email(EMAIL_SUBJECT_WARNING_DISKS, e.message)
 	# process files and data
 	try:
 		# get nfo and rar or video files from torrent directory
@@ -423,17 +428,19 @@ def process_movie():
 		log.info('Library info file: %s' % movie_info_path)
 	except Exception, e:
 		log.error(e.message)
+		send_email(EMAIL_SUBJECT_ERROR % TORRENT_TITLE, e.message)
 	else:
 		try:
 			# update xbmc
 			update_movies_xbmc(movie_video_path)
 			notify_xbmc('New Movie', movie_title, PROGRAM_ICON)
-			# send email
-			movie_poster = POSTER_URL % tmdb['poster_path']
-			body = generate_body(movie_title, movie_year, movie_imdb, movie_poster, movie_video_path)
-			send_email(EMAIL_SUBJECT_MOVIE % movie_title, body)
 		except Exception, e:
 			log.warning(e.message)
+			send_email(EMAIL_SUBJECT_WARNING % TORRENT_TITLE, e.message)
+		# send email
+		movie_poster = POSTER_URL % tmdb['poster_path']
+		body = generate_body(movie_title, movie_year, movie_imdb, movie_poster, movie_video_path)
+		send_email(EMAIL_SUBJECT_MOVIE % movie_title, body)
 	# start torrents
 	unpause_torrents()
 
@@ -441,8 +448,8 @@ def process_episode():
 	log.info('Processing episode...')
 	# pause torrents
 	pause_torrents()
-	# check disks space and remove torrents
 	try:
+		# check disks space and remove torrents
 		d1 = os.path.splitdrive(TORRENT_PATH)[0]
 		d2 = os.path.splitdrive(SERIES_PATH)[0]
 		if disk_full(d1) or disk_full(d2):
@@ -451,6 +458,7 @@ def process_episode():
 				raise Exception('Disk %s or %s full' % (d1, d2))
 	except Exception, e:
 		log.warning(e.message)
+		send_email(EMAIL_SUBJECT_WARNING_DISKS, e.message)
 	# process files and data
 	try:
 		# get rar or video files from torrent directory
@@ -478,19 +486,21 @@ def process_episode():
 		log.info('Library video file: %s' % serie_video_path)
 	except Exception, e:
 		log.error(e.message)
+		send_email(EMAIL_SUBJECT_ERROR % TORRENT_TITLE, e.message)
 	else:
 		try:
 			# update xbmc
 			update_episodes_xbmc(serie_video_path)
 			notify_xbmc('New Episode', serie_title, PROGRAM_ICON)
-			# send email
-			serie_imdb = find_in_file(serie_info, REGEX_IMDB_URL)[0]
-			log.info('Imdb: %s' % serie_imdb)
-			serie_poster = find_in_webpage(IMDB_API_URL % serie_imdb, REGEX_IMDB_API_POSTER)[0]
-			body = generate_body(serie_title, '%sx%s'%(serie_season,serie_episode), serie_imdb, serie_poster, serie_video_path)
-			send_email(EMAIL_SUBJECT_EPISODE % serie_title, body)
 		except Exception, e:
 			log.warning(e.message)
+			send_email(EMAIL_SUBJECT_WARNING % TORRENT_TITLE, e.message)
+		# send email
+		serie_imdb = find_in_file(serie_info, REGEX_IMDB_URL)[0]
+		log.info('Imdb: %s' % serie_imdb)
+		serie_poster = find_in_webpage(IMDB_API_URL % serie_imdb, REGEX_IMDB_API_POSTER)[0]
+		body = generate_body(serie_title, '%sx%s'%(serie_season,serie_episode), serie_imdb, serie_poster, serie_video_path)
+		send_email(EMAIL_SUBJECT_EPISODE % serie_title, body)
 	# start torrents
 	unpause_torrents()
 
@@ -505,11 +515,9 @@ def process_unsorted():
 				raise Exception('Disk %s full' % d)
 	except Exception, e:
 		log.warning(e.message)
+		send_email(EMAIL_SUBJECT_WARNING_DISKS, e.message)
 	# inform user
-	try:
-		send_email(EMAIL_SUBJECT_UNSORTED % TORRENT_TITLE, TORRENT_TITLE)
-	except Exception, e:
-		log.warning(e.message)
+	send_email(EMAIL_SUBJECT_UNSORTED % TORRENT_TITLE, TORRENT_TITLE)
 
 ## MAIN
 try:
