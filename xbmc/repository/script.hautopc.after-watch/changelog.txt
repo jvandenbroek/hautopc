@@ -1,3 +1,7 @@
+0.5.1 (08-09-2013):
+* Set 'assume as watched' to 100% to disable this feature (fix performance issues on slower machines)
+* Added option to hide progress dialog
+
 0.5.0 (02-06-2013):
 * Complete rewrite and bugfixing, plz check addon settings
 * Turn off screen (windows only)

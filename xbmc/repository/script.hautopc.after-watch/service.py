@@ -169,10 +169,11 @@ def recommended_imdb(imdb):
 ## UI
 class Progress:
 	def __init__(self, playing, steps):
+		self.enable = setting('progress') == 'true'
 		self.playing = playing
 		self.steps = steps
 		self.current = 0
-		if steps > 0:
+		if steps > 0 and self.enable:
 			self.dialog = xbmcgui.DialogProgress()
 			self.dialog.create(info('name'), self.playing.title)
 			self.dialog.update(0, self.playing.title)
@@ -186,7 +187,8 @@ class Progress:
 	
 	def update(self, msg):
 		percent = self.current * 100 / self.steps
-		self.dialog.update(percent, self.playing.title, self.module_title, msg)
+		if self.enable:
+			self.dialog.update(percent, self.playing.title, self.module_title, msg)
 		self.current += 1
 		self.module_current += 1
 
@@ -196,23 +198,27 @@ class Progress:
 			self.current += skip
 			self.module_current += skip
 		percent = self.current * 100 / self.steps
-		self.dialog.update(percent, self.playing.title)
+		if self.enable:
+			self.dialog.update(percent, self.playing.title)
 		if self.current == self.steps:
-			self.dialog.close()
+			if self.enable:
+				self.dialog.close()
 			Progress.notification('Done')
 
 	def update_library(self):
-		self.dialog.close()
+		if self.enable:
+			self.dialog.close()
 		self.dialog = None
 		xbmc.executebuiltin('CleanLibrary(video)')
 		while not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			pass
 		while xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.sleep(20)
-		self.dialog = xbmcgui.DialogProgress()
-		self.dialog.create(info('name'), self.playing.title)
 		percent = (self.current-1) * 100 / self.steps
-		self.dialog.update(percent, self.playing.title, self.module_title, lang(30513))
+		if self.enable:
+			self.dialog = xbmcgui.DialogProgress()
+			self.dialog.create(info('name'), self.playing.title)
+			self.dialog.update(percent, self.playing.title, self.module_title, lang(30513))
 		xbmc.executebuiltin('UpdateLibrary(video)')
 		while not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			pass
@@ -536,10 +542,12 @@ class AfterWatchPlayer(xbmc.Player):
 			self.playing = None
 
 	def __time(self):
+		self.current = 0
 		self.time = self.getTotalTime()
-		while self.isPlaying():
-			self.current = self.getTime()
-			xbmc.sleep(2000)
+		if not int(setting('assume')) == 100:
+			while self.isPlaying():
+				self.current = self.getTime()
+				xbmc.sleep(2000)
 
 player = AfterWatchPlayer()
 while not xbmc.abortRequested:
