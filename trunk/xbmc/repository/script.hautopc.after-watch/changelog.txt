@@ -1,3 +1,6 @@
+0.5.2 (16-09-2013):
+* Improvements in file management, and change lib to xbmcvfs
+
 0.5.1 (08-09-2013):
 * Set 'assume as watched' to 100% to disable this feature (fix performance issues on slower machines)
 * Added option to hide progress dialog

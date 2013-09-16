@@ -12,9 +12,9 @@
 	<string id="30101">Movies</string>
 	<string id="30111">Episodes</string>
 	<string id="30103">Folder structure</string>
-	<string id="30134">Multiple folders (container/title/files.*)</string>
-	<string id="30135">Single folder (container/titles.*)</string>
-	<string id="30136">Multiple folders (container/title/season/files.*)</string>
+	<string id="30134">Multiple folders (lib/title/files.*)</string>
+	<string id="30135">Single folder (lib/files.*)</string>
+	<string id="30136">Multiple folders (lib/title/season/files.*)</string>
 	<!-- SETTINGS RATING -->
 	<string id="30200">Rating</string>
 	<string id="30201">Rate movies IMDb</string>
