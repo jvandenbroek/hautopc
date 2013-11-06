@@ -1,16 +1,15 @@
 import xbmc
 import xbmcaddon
 import xbmcgui
-import xbmcvfs
 import os
-import json
-import re
 import operator
-from resources.lib import requests
+from resources.lib import utilxbmc
+from resources.lib import utilfile
+from resources.lib import utilnet
 
 __addon__ = xbmcaddon.Addon(id='script.hautopc.after-watch')
 
-## UTIL XBMC
+## UTIL
 def log(msg):
 	xbmc.log('[%s] %s' % (info('name'), msg))
 
@@ -25,155 +24,6 @@ def setting(id):
 
 def set_setting(id, val):
 	__addon__.setSetting(id, val)
-
-def xbmc_json(cmd):
-	r = xbmc.executeJSONRPC(cmd)
-	j = json.loads(r)
-	return j
-
-def get_movieid_by_path(path):
-	j = xbmc_json('{"jsonrpc":"2.0","method":"VideoLibrary.GetMovies","params":{"properties":["file"]},"id":1}')
-	if 'movies' in j['result']:
-		for movie in j['result']['movies']:
-			if movie['file'] == path:
-				return movie['movieid']
-
-def get_movieid_by_imdb(imdb):
-	j = xbmc_json('{"jsonrpc":"2.0","method":"VideoLibrary.GetMovies","params":{"properties":["imdbnumber"]},"id":1}')
-	if 'movies' in j['result']:
-		for movie in j['result']['movies']:
-			if movie['imdbnumber'] == imdb:
-				return movie['movieid']
-
-def get_movie_title(movieid):
-	j = xbmc_json('{"jsonrpc":"2.0","method":"VideoLibrary.GetMovieDetails","params":{"movieid":%s,"properties":["title"]},"id":1}' % movieid)
-	return j['result']['moviedetails']['title']
-
-def get_episodeid_by_path(path):
-	j = xbmc_json('{"jsonrpc":"2.0","method":"VideoLibrary.GetEpisodes","params":{"properties":["file"]},"id":1}')
-	if 'episodes' in j['result']:
-		for episode in j['result']['episodes']:
-			if episode['file'] == path:
-				return episode['episodeid']
-
-def set_movie_watched(movieid):
-	cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.SetMovieDetails","params":{"movieid":%d,"playcount":1},"id":1}' % movieid
-	xbmc.executeJSONRPC(cmd)
-
-def set_episode_watched(episodeid):
-	cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.SetEpisodeDetails","params":{"episodeid":%d,"playcount":1},"id":1}' % episodeid
-	xbmc.executeJSONRPC(cmd)
-
-def set_movie_rating(movieid, rating):
-	cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.SetMovieDetails","params":{"movieid":%d,"rating":%s},"id":1}' % (movieid, str(rating))
-	xbmc.executeJSONRPC(cmd)
-	
-def set_episode_rating(episodeid, rating):
-	cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.SetEpisodeDetails","params":{"episodeid":%d,"rating":%s},"id":1}' % (episodeid, str(rating))
-	xbmc.executeJSONRPC(cmd)
-
-def set_movie_tag(movieid, tag):
-	cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.SetMovieDetails","params":{"movieid":%d,"tag":["%s"]},"id":1}' % (movieid, tag)
-	xbmc.executeJSONRPC(cmd)
-	
-def play_movie(movieid):
-	cmd = '{"jsonrpc":"2.0","method":"Player.Open","params":{"item":{"movieid":%d}},"id":1}' % movieid
-	xbmc.executeJSONRPC(cmd)
-
-## UTIL FILE MANAGEMENT
-def copy_directory(source, destination):
-	destination = os.path.join(destination, os.path.basename(source))
-	xbmcvfs.mkdirs(destination) # todo error if exists?
-	dirs, files = xbmcvfs.listdir(source)
-	for f in files:
-		src = os.path.join(source, f)
-		dest = os.path.join(destination, f)
-		xbmcvfs.copy(src, dest)
-	for d in dirs:
-		d = os.path.join(source, d)
-		copy_directory(d, destination)
-
-def delete_directory(source):
-	dirs, files = xbmcvfs.listdir(source)
-	for d in dirs:
-		d = os.path.join(source, d)
-		delete_directory(d)
-	for f in files:
-		f = os.path.join(source, f)
-		xbmcvfs.delete(f)
-	xbmcvfs.rmdir(source)
-
-def copy_files(source, destination, match):
-	# create directories if needed
-	xbmcvfs.mkdirs(destination)
-	# move files from source to destination if match
-	dirs, files = xbmcvfs.listdir(source)
-	for f in files:
-		if match in f:
-			src = os.path.join(source, f)
-			dest = os.path.join(destination, f)
-			xbmcvfs.copy(src, dest) # todo error
-
-def delete_files(source, match, del_empty=False):
-	# delete files from source if match
-	dirs, files = xbmcvfs.listdir(source)
-	for f in files:
-		if match in f:
-			f = os.path.join(source, f)
-			xbmcvfs.delete(f)
-	# delete source directory if empty
-	if del_empty and len(xbmcvfs.listdir(source)) == 0:
-		xbmcvfs.rmdir(source)
-
-## UTIL NET
-def login_imdb(username, password):
-	s = requests.Session()
-	s.headers.update({'User-Agent':'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31'})
-	# read login page
-	src = s.get('https://secure.imdb.com/register-imdb/login').text
-	match = re.search(r'<input\stype="hidden"\sname="(\w{1,9})"\svalue="(\w{1,9})"', src)
-	if not match:
-		s.close()
-		return
-	hidden_name = str(match.group(1))
-	hidden_value = str(match.group(2))
-	# login
-	post_data = {hidden_name: hidden_value, 'login': username, 'password': password}
-	src = s.post('https://secure.imdb.com/register-imdb/login', data=post_data).text
-	if not 'logout' in src:
-		s.close()
-		return
-	return s
-
-def logout_imdb(s):
-	s.get('https://secure.imdb.com/register-imdb/logout').text
-	s.close()
-
-def rate_imdb(s, imdb, rating):
-	rating = str(rating)
-	# read page
-	src = s.get('http://www.imdb.com/title/%s' % imdb).text
-	match = re.search(r'href="/(title/%s/vote\?v=%s;k=[^"]*)"' % (imdb, rating), src)
-	if not match:
-		s.close()
-		return
-	url = 'http://www.imdb.com/%s' % match.group(1)
-	# rate it :)
-	src = s.get(url).text
-	if not 'Your vote of %s was counted' % rating in src:
-		s.close()
-		return
-	return s
-
-def recommended_imdb(imdb):
-	s = requests.Session()
-	s.headers.update({'User-Agent':'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31'})
-	src = s.get('http://m.imdb.com/title/%s/similarities' % imdb).text
-	s.close()
-	#movies = re.findall(r'(\w{9})/\?ref_=tt_rec_tti"\s><img\sheight="113"\swidth="76"\salt="([^"]*)"\stitle=', src)
-	movies = re.findall(r'(tt\d{7})/"\sonClick="_gaq\.push\(\[\'_trackEvent\',\s\'Find\',\s\'\',\s\'\']\);">(.*)</a>', src)
-	movies = [{'imdb': movie[0], 'title': movie[1]} for movie in movies]
-	return movies
 
 ## UI
 class Progress:
@@ -262,7 +112,7 @@ class Progress:
 		movies = playing.recommended
 		for m in movies:
 			if m['movieid']:
-				m['title'] = '* %s' % get_movie_title(m['movieid'])
+				m['title'] = '* %s' % utilxbmc.get_movie_title(m['movieid'])
 		movies = sorted(movies, key=operator.itemgetter('title'))
 		i = xbmcgui.Dialog().select(lang(30509) % info('name'), [m['title'] for m in movies])
 		if not i == -1:
@@ -281,7 +131,7 @@ class Progress:
 ## TYPES
 class Movie:
 	def __init__(self):
-		j = xbmc_json('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","imdbnumber","art"]},"id":1}')
+		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","imdbnumber","art"]},"id":1}')
 		self.type = 'movie'
 		self.movieid = j['result']['item']['id']
 		p = j['result']['item']['file']
@@ -298,10 +148,11 @@ class Movie:
 		delete = False
 		rate_imdb = False
 		rate_lib = False
+		rate_tag = False
 		recommended = False
 		screen_off = False
 		steps = 0
-		if setting('fm_movies') == '1': # move
+		if setting('fm_movies_manage') == '1': # move
 			dest = Progress.dialog_path(self, 'fm_movies_destination')
 			if dest:
 				lib = os.path.dirname(self.path)
@@ -310,19 +161,22 @@ class Movie:
 				if not dest == lib: # already watched
 					move = True
 					steps += self.MOVE_STEPS
-		elif setting('fm_movies') == '2': # delete
+		elif setting('fm_movies_manage') == '2': # delete
 			delete = True
 			steps += self.DELETE_STEPS
-		if setting('rt_movies_imdb') == 'true' or not setting('rt_movies_lib') == '0':
+		if setting('rt_movies_imdb') == 'true' or setting('rt_movies_lib') == 'true' or setting('rt_movies_tag') == 'true':
 			r = Progress.dialog_rating(self)
 			if r:
 				if setting('rt_movies_imdb') == 'true':
 					rate_imdb = True
 					steps += self.RATE_IMDB_STEPS
-				if not setting('rt_movies_lib') == '0':
+				if setting('rt_movies_lib') == 'true':
 					rate_lib = True
 					steps += self.RATE_LIB_STEPS
-		if setting('rc_movies') == 'true':
+				if setting('rt_movies_tag') == 'true':
+					rate_tag = True
+					steps += self.RATE_TAG_STEPS
+		if setting('rc_movies_imdb') == 'true':
 			recommended = True
 			steps += self.RECOMMENDED_STEPS
 		if setting('m_screen_off') == 'true':
@@ -345,6 +199,10 @@ class Movie:
 			if progress.start_module(lang(30518), self.RATE_LIB_STEPS):
 				self.__rate_lib(progress)
 			progress.finish_module()
+		if rate_tag:
+			if progress.start_module(lang(30517), self.RATE_TAG_STEPS):
+				self.__rate_tag(progress)
+			progress.finish_module()
 		if recommended:
 			if progress.start_module(lang(30515), self.RECOMMENDED_STEPS):
 				self.__recommended(progress)
@@ -353,7 +211,7 @@ class Movie:
 		if self.recommended:
 			movieid = Progress.dialog_recommended(self)
 			if movieid:
-				play_movie(movieid)
+				utilxbmc.play_movie(movieid)
 		if screen_off and not player.isPlaying():
 			Progress.screen_off()
 
@@ -363,20 +221,26 @@ class Movie:
 		source = os.path.dirname(self.path)
 		destination = os.path.normpath(setting('fm_movies_destination'))
 		if setting('fm_movies_structure') == '0': # multiple folders
-			copy_directory(source, destination)
-			delete_directory(source)
+			if setting('fm_alternate') == 'false':
+				utilfile.move_directory(source, destination)
+			else:
+				utilfile.copy_directory_alt(source, destination)
+				utilfile.delete_directory_alt(source)
 			self.path = os.path.join(destination, self.path.split(os.sep)[-2], os.path.basename(self.path))
 		else: # single folder
 			match = os.path.splitext(os.path.basename(self.path))[0]
-			copy_files(source, destination, match)
-			delete_files(source, match)
+			if setting('fm_alternate') == 'false':
+				utilfile.move_files(source, destination, match)
+			else:
+				utilfile.copy_files_alt(source, destination, match)
+				utilfile.delete_files_alt(source, match)
 			self.path = os.path.join(destination, os.path.basename(self.path))
 		progress.update(lang(30513)) # updating library
 		progress.update_library()
-		self.movieid = get_movieid_by_path(self.path)
+		self.movieid = utilxbmc.get_movieid_by_path(self.path)
 		if self.movieid:
 			progress.update(lang(30514)) # setting watched
-			set_movie_watched(self.movieid)
+			utilxbmc.set_movie_watched(self.movieid)
 
 	DELETE_STEPS = 2
 	def __delete(self, progress):
@@ -384,10 +248,16 @@ class Movie:
 		path = os.path.dirname(self.path)
 		f = os.path.basename(self.path)
 		if setting('fm_movies_structure') == '0': # multiple folders
-			delete_directory(path)
+			if setting('fm_alternate') == 'false':
+				utilfile.delete_directory(path)
+			else:
+				utilfile.delete_directory_alt(path)
 		else: # single folder
 			match = os.path.splitext(f)[0]
-			delete_files(path, match)
+			if setting('fm_alternate') == 'false':
+				utilfile.delete_files(path, match)
+			else:
+				utilfile.delete_files_alt(path, match)
 		progress.update(lang(30513)) # updating library
 		progress.update_library()
 		self.movieid = None
@@ -396,48 +266,53 @@ class Movie:
 	RATE_IMDB_STEPS = 3
 	def __rate_imdb(self, progress):
 		progress.update(lang(30519)) # logging in imdb
-		s = login_imdb(setting('rt_imdb_user'), setting('rt_imdb_pass'))
+		s = utilnet.login_imdb(setting('rt_imdb_user'), setting('rt_imdb_pass'))
 		if not s:
 			Progress.notification('Error: loggin in IMDb')
 			return
 		progress.update(lang(30520)) # rating on imdb
-		s = rate_imdb(s, self.imdb, self.rating)
+		s = utilnet.rate_imdb(s, self.imdb, self.rating)
 		if not s:
 			Progress.notification('Error: rating on IMDb')
 			return
 		progress.update(lang(30521)) # logging out imdb
-		logout_imdb(s)
+		utilnet.logout_imdb(s)
 
-	RATE_LIB_STEPS = 2
+	RATE_LIB_STEPS = 1
 	def __rate_lib(self, progress):
-		if not self.movieid:
+		if not self.movieid: # todo porque isto?
 			Progress.notification('Error: rate library')
 			return
-		if setting('rt_movies_lib') in ('2', '3'):
-			progress.update(lang(30524)) # setting tag
-			tag = setting('rt_tag')
-			if '%s' in tag:
-				tag = tag % self.rating
-			set_movie_tag(self.movieid, tag)
-		if setting('rt_movies_lib') in ('1', '3'):
-			progress.update(lang(30522)) # updating rating
-			set_movie_rating(self.movieid, self.rating)
+		progress.update(lang(30522)) # updating rating
+		utilxbmc.set_movie_rating(self.movieid, self.rating)
+
+	RATE_TAG_STEPS = 1
+	def __rate_tag(self, progress):
+		if not self.movieid: # todo porque isto?
+			Progress.notification('Error: rate library')
+			return
+		progress.update(lang(30524)) # setting tag
+		tag = setting('rt_movies_tag_text')
+		if '%s' in tag:
+			tag = tag % self.rating
+		utilxbmc.set_movie_tag(self.movieid, tag)
+
 
 	RECOMMENDED_STEPS = 2
 	def __recommended(self, progress):
 		progress.update(lang(30527)) # browsing imdb
-		movies = recommended_imdb(self.imdb)
+		movies = utilnet.recommended_imdb(self.imdb)
 		if not movies:
 			Progress.notification('Error: recommended movies not found')
 			return
 		progress.update(lang(30528)) # searching library
 		for movie in movies:
-			movie['movieid'] = get_movieid_by_imdb(movie['imdb'])
+			movie['movieid'] = utilxbmc.get_movieid_by_imdb(movie['imdb'])
 		self.recommended = movies
 
 class Episode:
 	def __init__(self):
-		j = xbmc_json('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","art"]},"id":1}')
+		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","art"]},"id":1}')
 		self.type = 'episode'
 		self.episodeid = j['result']['item']['id']
 		p = j['result']['item']['file']
@@ -453,14 +328,14 @@ class Episode:
 		rate_lib = False
 		screen_off = False
 		steps = 0
-		if setting('fm_episodes') == '1':
+		if setting('fm_episodes_manage') == '1':
 			dest = Progress.dialog_path(self, 'fm_episodes_destination')
 			if dest:
 				lib = os.path.dirname(os.path.dirname(os.path.dirname(self.path)))
 				if not dest == lib: # already watched
 					move = True
 					steps += self.MOVE_STEPS
-		elif setting('fm_episodes') == '2':
+		elif setting('fm_episodes_manage') == '2':
 			delete = True
 			steps += self.DELETE_STEPS
 		if setting('rt_episodes_lib') == 'true':
@@ -494,22 +369,28 @@ class Episode:
 		source = os.path.dirname(self.path)
 		destination = os.path.join(os.path.normpath(setting('fm_episodes_destination')), self.path.split(os.sep)[-3], self.path.split(os.sep)[-2])
 		match = os.path.splitext(os.path.basename(self.path))[0]
-		copy_files(source, destination, match)
-		delete_files(source, match, True)
+		if setting('fm_alternate') == 'false':
+			utilfile.move_files(source, destination, match, True)
+		else:
+			utilfile.copy_files_alt(source, destination, match)
+			utilfile.delete_files_alt(source, match, True)
 		self.path = os.path.join(destination, os.path.basename(self.path))
 		progress.update(lang(30513)) # updating library
 		progress.update_library()
-		self.episodeid = get_episodeid_by_path(self.path)
+		self.episodeid = utilxbmc.get_episodeid_by_path(self.path)
 		if self.episodeid:
 			progress.update(lang(30514)) # setting watched
-			set_episode_watched(self.episodeid)
+			utilxbmc.set_episode_watched(self.episodeid)
 	
 	DELETE_STEPS = 2
 	def __delete(self, progress):
 		progress.update(lang(30516)) # deleting files
 		source = os.path.dirname(self.path)
 		match = os.path.splitext(os.path.basename(self.path))[0]
-		delete_files(source, match, True)
+		if setting('fm_alternate') == 'false':
+			utilfile.delete_files(source, match, True)
+		else:
+			utilfile.delete_files_alt(source, match, True)
 		progress.update(lang(30513)) # updating library
 		progress.update_library()
 		self.episodeid = None
@@ -517,21 +398,21 @@ class Episode:
 		
 	RATE_LIB_STEPS = 1
 	def __rate_lib(self, progress):
-		if not self.episodeid:
+		if not self.episodeid: # todo porque isto?
 			Progress.notification('Error: rate library')
 			return
 		progress.update(lang(30522)) # updating rating
-		set_episode_rating(self.episodeid, self.rating)
+		utilxbmc.set_episode_rating(self.episodeid, self.rating)
 
 ## PLAYER
 class AfterWatchPlayer(xbmc.Player):
 	def onPlayBackStarted(self):
 		self.playing = None
-		j = xbmc_json('{"jsonrpc":"2.0","method":"Player.GetActivePlayers","id":1}')
+		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetActivePlayers","id":1}')
 		t = j['result'][0]['type']
 		i = j['result'][0]['playerid']
 		if t == 'video':
-			j = xbmc_json('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":%s},"id":1}' % i)
+			j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":%s},"id":1}' % i)
 			type = j['result']['item']['type']
 			if type == 'movie':
 				self.playing = Movie()

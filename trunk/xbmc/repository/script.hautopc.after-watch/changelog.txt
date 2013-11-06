@@ -1,3 +1,7 @@
+0.5.3 (06-11-2013):
+* Added option to set file management alternate method
+* Cleaned settings (please check your settings)
+
 0.5.2 (16-09-2013):
 * Improvements in file management, and change lib to xbmcvfs
 
