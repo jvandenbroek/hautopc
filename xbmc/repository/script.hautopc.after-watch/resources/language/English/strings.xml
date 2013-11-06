@@ -1,44 +1,40 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <strings>
 	<!-- 30000 / 30999 -->
+	<!-- SETTINGS -->
+	<string id="30102">Movies</string>
+	<string id="30103">Episodes</string>
+	<string id="30105"> </string>
 	<!-- SETTINGS FILE MANAGEMENT -->
 	<string id="30100">File Management</string>
-	<string id="30104">Manage movies</string>
-	<string id="30105">Manage episodes</string>
-	<string id="30131"> </string>
+	<string id="30104">Manage</string>
+	<string id="30101">Destination</string>
+	<string id="30111">Folder structure</string>
 	<string id="30132">Move</string>
 	<string id="30133">Delete</string>
-	<string id="30102">Destination</string>
-	<string id="30101">Movies</string>
-	<string id="30111">Episodes</string>
-	<string id="30103">Folder structure</string>
 	<string id="30134">Multiple folders (lib/title/files.*)</string>
 	<string id="30135">Single folder (lib/files.*)</string>
 	<string id="30136">Multiple folders (lib/title/season/files.*)</string>
 	<!-- SETTINGS RATING -->
 	<string id="30200">Rating</string>
-	<string id="30201">Rate movies IMDb</string>
-	<string id="30204">Rate movies library</string>
-	<string id="30207">Rate episodes library</string>
-	<string id="30251"> </string>
-	<string id="30205">Rating</string>
-	<string id="30232">Tag</string>
-	<string id="30231">Rating/Tag</string>
+	<string id="30201">Rate IMDb</string>
+	<string id="30204">Rate library</string>
+	<string id="30205">Set tag</string>
+	<string id="30206">Tag text [%s - rating]</string>
 	<string id="30250">IMDb</string>
 	<string id="30211">Username</string>
 	<string id="30212">Password</string>
-	<string id="30202">Library</string>
-	<string id="30206">Tag text</string>
 	<!-- SETTINGS RECOMMENDED -->
 	<string id="30300">Recommended</string>
-	<string id="30301">Show recommended movies</string>
-	<!-- SETTINGS MORE -->
-	<string id="30400">More</string>
+	<string id="30301">IMDb "People who liked this also liked"</string>
+	<!-- SETTINGS MISC -->
+	<string id="30400">Misc</string>
 	<string id="30404">Turn off screen (Windows)</string>
-	<!-- SETTINGS ... -->
-	<string id="30405">...</string>
+	<!-- SETTINGS ADVANCED -->
+	<string id="30405">Advanced</string>
 	<string id="30402">Progress dialog</string>
 	<string id="30401">Confirm dialogs</string>
+	<string id="30406">Alternate file management method</string>
 	<string id="30403">Assume as watched</string>
 	<!-- USER DIALOG -->
 	<string id="30512">%s - %s's rating</string>
@@ -50,6 +46,7 @@
 	<string id="30501">Delete</string>
 	<string id="30523">Rate IMDb</string>
 	<string id="30518">Rate Library</string>
+	<string id="30517">Set tag</string>
 	<string id="30515">Show Recommended</string>
 	<!-- STEPS -->
 	<string id="30506">Moving files...</string>
