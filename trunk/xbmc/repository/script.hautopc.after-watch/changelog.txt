@@ -1,3 +1,6 @@
+0.5.4 (12-11-2013):
+* Bugfix addon could not iniciate
+
 0.5.3 (06-11-2013):
 * Added option to set file management alternate method
 * Cleaned settings (please check your settings)
