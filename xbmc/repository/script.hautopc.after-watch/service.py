@@ -28,36 +28,37 @@ def set_setting(id, val):
 	__addon__.setSetting(id, val)
 
 
-class Dialog:
-	def proceed(title, subtitle):
-		proceed = True
-		if setting('confirm') == 'true':
-			proceed = xbmcgui.Dialog().yesno(info('name'), title, lang(30526) % subtitle)
-		return proceed
+## DIALOG
+def dialog_proceed(title, subtitle):
+	proceed = True
+	if setting('confirm') == 'true':
+		proceed = xbmcgui.Dialog().yesno(info('name'), title, lang(30526) % subtitle)
+	return proceed
 
-	def error(msg):
-		xbmcgui.Dialog().ok(info('name'), msg)
+def dialog_error(msg):
+	xbmcgui.Dialog().ok(info('name'), msg)
 
-	def notification(msg):
-		xbmc.executebuiltin('Notification(%s,%s,5000,%s)' % (info('name'), msg, info('icon')))
-		# todo xbmcgui.Dialog().notification('Movie Trailers', 'Finding Nemo download finished.', xbmcgui.NOTIFICATION_INFO, 5000)
+def dialog_notification(msg):
+	xbmc.executebuiltin('Notification(%s,%s,5000,%s)' % (info('name'), msg, info('icon')))
+	# todo xbmcgui.Dialog().notification('Movie Trailers', 'Finding Nemo download finished.', xbmcgui.NOTIFICATION_INFO, 5000)
 
-	def rating(title):
-		l = ['10 **********','9 *********','8 ********','7 *******','6 ******','5 *****','4 ****','3 ***','2 **','1 *']
-		i = xbmcgui.Dialog().select(lang(30512) % (info('name'), title), l)
-		if not i == -1:
-			rating = 10 - i
-			return rating
+def dialog_rating(title):
+	l = ['10 **********','9 *********','8 ********','7 *******','6 ******','5 *****','4 ****','3 ***','2 **','1 *']
+	i = xbmcgui.Dialog().select(lang(30512) % (info('name'), title), l)
+	if not i == -1:
+		rating = 10 - i
+		return rating
 
-	def recommended(playing):
-		movies = playing.recommended
-		for m in movies:
-			if m['movieid']:
-				m['title'] = '* %s' % utilxbmc.get_movie_title(m['movieid'])
-		movies = sorted(movies, key=operator.itemgetter('title'))
-		i = xbmcgui.Dialog().select(lang(30509) % info('name'), [m['title'] for m in movies])
-		if not i == -1:
-			return movies[i]['movieid']
+def dialog_recommended(playing):
+	movies = playing.recommended
+	for m in movies:
+		if m['movieid']:
+			m['title'] = '* %s' % utilxbmc.get_movie_title(m['movieid'])
+	movies = sorted(movies, key=operator.itemgetter('title'))
+	i = xbmcgui.Dialog().select(lang(30509) % info('name'), [m['title'] for m in movies])
+	#l = xbmcgui.ListItem('foobar')
+	if not i == -1:
+		return movies[i]['movieid']
 
 
 ## PROGRESS
@@ -180,7 +181,7 @@ class Movie(Video):
 				progress.update(lang(30514)) # setting watched
 				utilxbmc.set_movie_watched(self.movieid)
 		except Exception, e:
-			Dialog.error(e.message)
+			dialog_error(e.message)
 		finally:
 			progress.finish_module()
 
@@ -207,7 +208,7 @@ class Movie(Video):
 			self.movieid = None
 			self.path = None
 		except Exception, e:
-			Dialog.error(e.message)
+			dialog_error(e.message)
 		finally:
 			progress.finish_module()
 
@@ -228,7 +229,7 @@ class Movie(Video):
 			progress.update(lang(30521)) # logging out imdb
 			utilnet.logout_imdb(s)
 		except Exception, e:
-			Dialog.error(e.message)
+			dialog_error(e.message)
 		finally:
 			progress.finish_module()
 
@@ -241,7 +242,7 @@ class Movie(Video):
 			progress.update(lang(30522)) # updating rating
 			utilxbmc.set_movie_rating(self.movieid, self.rating)
 		except Exception, e:
-			Dialog.error(e.message)
+			dialog_error(e.message)
 		finally:
 			progress.finish_module()
 
@@ -257,7 +258,7 @@ class Movie(Video):
 				tag = tag % self.rating
 			utilxbmc.set_movie_tag(self.movieid, tag)
 		except Exception, e:
-			Dialog.error(e.message)
+			dialog_error(e.message)
 		finally:
 			progress.finish_module()
 
@@ -274,7 +275,7 @@ class Movie(Video):
 				movie['movieid'] = utilxbmc.get_movieid_by_imdb(movie['imdb'])
 			self.recommended = movies
 		except Exception, e:
-			Dialog.error(e.message)
+			dialog_error(e.message)
 		finally:
 			progress.finish_module()
 
@@ -288,27 +289,27 @@ class Movie(Video):
 		rate_tag = False
 		recommended = False
 		if setting('fm_movies_manage') == '1': # move
-			if Dialog.proceed(self.title, lang(30132)):
+			if dialog_proceed(self.title, lang(30132)):
 				move = True
 				steps += self.MOVE_STEPS
 		elif setting('fm_movies_manage') == '2': # delete
-			if Dialog.proceed(self.title, lang(30133)):
+			if dialog_proceed(self.title, lang(30133)):
 				delete = True
 				steps += self.DELETE_STEPS
 		if setting('rt_movies_imdb') == 'true':
-			if Dialog.proceed(self.title, lang(30201)):
+			if dialog_proceed(self.title, lang(30201)):
 				rate_imdb = True
 				steps += self.RATE_IMDB_STEPS
 		if setting('rt_movies_lib') == 'true':
-			if Dialog.proceed(self.title, lang(30204)):
+			if dialog_proceed(self.title, lang(30204)):
 				rate_lib = True
 				steps += self.RATE_LIB_STEPS
 		if setting('rt_movies_tag') == 'true':
-			if Dialog.proceed(self.title, lang(30205)):
+			if dialog_proceed(self.title, lang(30205)):
 				rate_tag = True
 				steps += self.RATE_TAG_STEPS
 		if setting('rc_movies_imdb') == 'true':
-			if Dialog.proceed(self.title, lang(30301)):
+			if dialog_proceed(self.title, lang(30301)):
 				recommended = True
 				steps += self.RECOMMENDED_STEPS
 		# pre settings
@@ -334,9 +335,9 @@ class Movie(Video):
 			set_setting('rt_movies_tag_text', tag)
 		# pre context
 		if rate_imdb or rate_lib or rate_tag:
-			rating = Dialog.rating(self.title)
+			rating = dialog_rating(self.title)
 			while not rating:
-				rating = Dialog.rating(self.title)
+				rating = dialog_rating(self.title)
 			self.rating = rating
 		# pre process
 		progress = Progress(steps)
@@ -355,7 +356,7 @@ class Movie(Video):
 
 		# process
 		if self.recommended:
-			movieid = Dialog.recommended(self)
+			movieid = dialog_recommended(self)
 			if movieid:
 				utilxbmc.play_movie(movieid)
 
@@ -364,13 +365,13 @@ class Movie(Video):
 		logoff = False
 		display_off = False
 		if setting('ps_quit_menu') == 'true':
-			if Dialog.proceed(self.title, lang(30402)):
+			if dialog_proceed(self.title, lang(30402)):
 				quit_menu = True
 		if setting('ps_logoff') == 'true':
-			if Dialog.proceed(self.title, lang(30407)):
+			if dialog_proceed(self.title, lang(30407)):
 				logoff = True
 		if setting('ps_display_off') == 'true':
-			if Dialog.proceed(self.title, lang(30404)):
+			if dialog_proceed(self.title, lang(30404)):
 				display_off = True
 		# post processing
 		if quit_menu:
@@ -417,7 +418,7 @@ class Episode(Video):
 				progress.update(lang(30514)) # setting watched
 				utilxbmc.set_episode_watched(self.episodeid)
 		except Exception, e:
-			Dialog.error(e.message)
+			dialog_error(e.message)
 		finally:
 			progress.finish_module()
 	
@@ -437,7 +438,7 @@ class Episode(Video):
 			self.episodeid = None
 			self.path = None
 		except Exception, e:
-			Dialog.error(e.message)
+			dialog_error(e.message)
 		finally:
 			progress.finish_module()
 		
@@ -450,7 +451,7 @@ class Episode(Video):
 			progress.update(lang(30522)) # updating rating
 			utilxbmc.set_episode_rating(self.episodeid, self.rating)
 		except Exception, e:
-			Dialog.error(e.message)
+			dialog_error(e.message)
 		finally:
 			progress.finish_module()
 
@@ -461,15 +462,15 @@ class Episode(Video):
 		delete = False
 		rate_lib = False
 		if setting('fm_episodes_manage') == '1': # move
-			if Dialog.proceed(self.title, lang(30132)):
+			if dialog_proceed(self.title, lang(30132)):
 				move = True
 				steps += self.MOVE_STEPS
 		elif setting('fm_episodes_manage') == '2': # delete
-			if Dialog.proceed(self.title, lang(30133)):
+			if dialog_proceed(self.title, lang(30133)):
 				delete = True
 				steps += self.DELETE_STEPS
 		if setting('rt_episodes_lib') == 'true':
-			if Dialog.proceed(self.title, lang(30204)):
+			if dialog_proceed(self.title, lang(30204)):
 				rate_lib = True
 				steps += self.RATE_LIB_STEPS
 		# pre settings
@@ -481,9 +482,9 @@ class Episode(Video):
 			set_setting('fm_episodes_destination', destiny)
 		 # pre context
 		if rate_lib:
-			rating = Dialog.rating(self.title)
+			rating = dialog_rating(self.title)
 			while not rating:
-				rating = Dialog.rating(self.title)
+				rating = dialog_rating(self.title)
 			self.rating = rating
 		# pre process
 		progress = Progress(steps)
@@ -499,13 +500,13 @@ class Episode(Video):
 		logoff = False
 		display_off = False
 		if setting('ps_quit_menu') == 'true':
-			if Dialog.proceed(self.title, lang(30402)):
+			if dialog_proceed(self.title, lang(30402)):
 				quit_menu = True
 		if setting('ps_logoff') == 'true':
-			if Dialog.proceed(self.title, lang(30407)):
+			if dialog_proceed(self.title, lang(30407)):
 				logoff = True
 		if setting('ps_display_off') == 'true':
-			if Dialog.proceed(self.title, lang(30404)):
+			if dialog_proceed(self.title, lang(30404)):
 				display_off = True
 		# post processing
 		if quit_menu:
