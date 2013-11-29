@@ -29,15 +29,17 @@
 		<setting label="30102" type="lsep"/>
 		<setting label="30301" id="rc_movies_imdb" type="bool" default="false"/>
 	</category>
-	<!-- MISC -->
+	<!-- POST -->
 	<category label="30400">
-		<setting label="30404" id="m_screen_off" type="bool" default="false"/>
+		<setting label="30407" id="ps_logoff" type="bool" default="false"/>
+		<setting label="30404" id="ps_display_off" type="bool" default="false"/>
+		<setting label="30402" id="ps_quit_menu" type="bool" default="false"/>
 	</category>
 	<!-- ADVANCED -->
 	<category label="30405">
-		<setting label="30402" id="progress" type="bool" default="true"/>
 		<setting label="30401" id="confirm" type="bool" default="true"/>
 		<setting label="30406" id="fm_alternate" type="bool" default="false"/>
 		<setting label="30403" id="assume" type="slider" range="0,100" option="percent" default="90"/>
+		<setting label="30999" id="hide_progress" type="bool" default="false"/>
 	</category>
 </settings>

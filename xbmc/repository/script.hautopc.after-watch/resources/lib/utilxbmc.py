@@ -6,6 +6,11 @@ def xjson(cmd):
 	j = json.loads(r)
 	return j
 
+def version():
+	j = xjson('{"jsonrpc":"2.0","method":"Application.GetProperties","params":{"properties":["version"]},"id":1}')
+	version = j['result']['version']['major']
+	return version
+
 def get_movieid_by_path(path):
 	j = xjson('{"jsonrpc":"2.0","method":"VideoLibrary.GetMovies","params":{"properties":["file"]},"id":1}') # todo isto json assim dah erro?
 	if 'movies' in j['result']:
