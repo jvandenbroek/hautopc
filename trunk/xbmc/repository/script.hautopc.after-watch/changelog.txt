@@ -1,3 +1,6 @@
+0.6.1 (29-11-2013):
+* Bugfix: broken addon
+
 0.6.0 (29-11-2013):
 * New feature: new progress bar (Gotham only)
 * New feature: Logoff user (post)
