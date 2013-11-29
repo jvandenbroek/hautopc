@@ -1,3 +1,12 @@
+0.6.0 (29-11-2013):
+* New feature: new progress bar (Gotham only)
+* New feature: Logoff user (post)
+* New feature: Show quit menu (post)
+* New feature: error dialogs
+* Improvement: rewrite progress handling, actions are divided between pre (normal) and post
+* Improvement: all confirm dialogs show before processing starts
+* Other small improvements
+
 0.5.4 (12-11-2013):
 * Bugfix addon could not iniciate
 

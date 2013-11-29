@@ -1,50 +1,57 @@
 import re
 from . import requests
 
+def has_net():
+	try:
+		requests.get('http://www.google.com')
+		return True
+	except:
+		return False
+
 def login_imdb(username, password):
-	s = requests.Session()
-	s.headers.update({'User-Agent':'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31'})
+	session = requests.Session()
+	session.headers.update({'User-Agent':'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31'})
 	# read login page
-	src = s.get('https://secure.imdb.com/register-imdb/login').text
+	src = session.get('https://secure.imdb.com/register-imdb/login').text
 	match = re.search(r'<input\stype="hidden"\sname="(\w{1,9})"\svalue="(\w{1,9})"', src)
 	if not match:
-		s.close()
+		session.close()
 		return
 	hidden_name = str(match.group(1))
 	hidden_value = str(match.group(2))
 	# login
 	post_data = {hidden_name: hidden_value, 'login': username, 'password': password}
-	src = s.post('https://secure.imdb.com/register-imdb/login', data=post_data).text
+	src = session.post('https://secure.imdb.com/register-imdb/login', data=post_data).text
 	if not 'logout' in src:
-		s.close()
+		session.close()
 		return
-	return s
+	return session
 
-def logout_imdb(s):
-	s.get('https://secure.imdb.com/register-imdb/logout').text
-	s.close()
+def logout_imdb(session):
+	session.get('https://secure.imdb.com/register-imdb/logout').text
+	session.close()
 
-def rate_imdb(s, imdb, rating):
+def rate_imdb(session, imdb, rating):
 	rating = str(rating)
 	# read page
-	src = s.get('http://www.imdb.com/title/%s' % imdb).text
+	src = session.get('http://www.imdb.com/title/%s' % imdb).text
 	match = re.search(r'href="/(title/%s/vote\?v=%s;k=[^"]*)"' % (imdb, rating), src)
 	if not match:
-		s.close()
+		session.close()
 		return
 	url = 'http://www.imdb.com/%s' % match.group(1)
 	# rate it :)
-	src = s.get(url).text
+	src = session.get(url).text
 	if not 'Your vote of %s was counted' % rating in src:
-		s.close()
+		session.close()
 		return
-	return s
+	return session
 
 def recommended_imdb(imdb):
-	s = requests.Session()
-	s.headers.update({'User-Agent':'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31'})
-	src = s.get('http://m.imdb.com/title/%s/similarities' % imdb).text
-	s.close()
+	session = requests.Session()
+	session.headers.update({'User-Agent':'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31'})
+	src = session.get('http://m.imdb.com/title/%s/similarities' % imdb).text
+	session.close()
 	#movies = re.findall(r'(\w{9})/\?ref_=tt_rec_tti"\s><img\sheight="113"\swidth="76"\salt="([^"]*)"\stitle=', src)
 	movies = re.findall(r'(tt\d{7})/"\sonClick="_gaq\.push\(\[\'_trackEvent\',\s\'Find\',\s\'\',\s\'\']\);">(.*)</a>', src)
 	movies = [{'imdb': movie[0], 'title': movie[1]} for movie in movies]
