@@ -5,6 +5,8 @@
 * New feature: error dialogs
 * Improvement: rewrite progress handling, actions are divided between pre (normal) and post
 * Improvement: all confirm dialogs show before processing starts
+* Improvement: detect no internet connection when needed
+* Improvement: detect needed settings not setted while processing (user, pass, paths)
 * Other small improvements
 
 0.5.4 (12-11-2013):
