@@ -224,9 +224,9 @@ class Movie(Video):
 		finally:
 			progress.finish_module()
 
-	UNCHANGED_PLAYCOUNT_STEPS = 1
-	def __unchanged_playcount(self, progress):
-		progress.start_module(lang(30701), self.UNCHANGED_PLAYCOUNT_STEPS)
+	PRESERVE_PLAYCOUNT_STEPS = 1
+	def __preserve_playcount(self, progress):
+		progress.start_module(lang(30701), self.PRESERVE_PLAYCOUNT_STEPS)
 		try:
 			progress.update(lang(30598)) # setting old playcount
 			utilxbmc.set_movie_playcount(self.movieid, self.playcount)
@@ -318,7 +318,7 @@ class Movie(Video):
 		steps = 0
 		move = False
 		delete = False
-		unchanged_playcount = False
+		preserve_playcount = False
 		set_tag = False
 		rate_imdb = False
 		rate_lib = False
@@ -334,8 +334,8 @@ class Movie(Video):
 				steps += self.DELETE_STEPS
 		if setting('pt_movies_playcount') == 'true':
 			if dialog_proceed(self.title, lang(30701)):
-				unchanged_playcount = True
-				steps += self.UNCHANGED_PLAYCOUNT_STEPS
+				preserve_playcount = True
+				steps += self.PRESERVE_PLAYCOUNT_STEPS
 		if setting('pt_movies_tag') == 'true':
 			if dialog_proceed(self.title, lang(30702)):
 				set_tag = True
@@ -394,8 +394,8 @@ class Movie(Video):
 			self.__move(progress)
 		elif delete:
 			self.__delete(progress)
-		if unchanged_playcount:
-			self.__unchanged_playcount(progress)
+		if preserve_playcount:
+			self.__preserve_playcount(progress)
 		if set_tag:
 			self.__set_tag(progress)
 		if rate_imdb:
@@ -496,9 +496,9 @@ class Episode(Video):
 		finally:
 			progress.finish_module()
 		
-	UNCHANGED_PLAYCOUNT_STEPS = 1
-	def __unchanged_playcount(self, progress):
-		progress.start_module(lang(30701), self.UNCHANGED_PLAYCOUNT_STEPS)
+	PRESERVE_PLAYCOUNT_STEPS = 1
+	def __preserve_playcount(self, progress):
+		progress.start_module(lang(30701), self.PRESERVE_PLAYCOUNT_STEPS)
 		try:
 			progress.update(lang(30598)) # setting old playcount
 			utilxbmc.set_episode_playcount(self.episodeid, self.playcount)
@@ -525,7 +525,7 @@ class Episode(Video):
 		steps = 0
 		move = False
 		delete = False
-		unchanged_playcount = False
+		preserve_playcount = False
 		rate_lib = False
 		if setting('fm_episodes_manage') == '1': # move
 			if dialog_proceed(self.title, lang(30132)):
@@ -533,12 +533,12 @@ class Episode(Video):
 				steps += self.MOVE_STEPS
 		elif setting('fm_episodes_manage') == '2': # delete
 			if dialog_proceed(self.title, lang(30701)):
-				unchanged_playcount = True
+				preserve_playcount = True
 				steps += self.DELETE_STEPS
 		if setting('pt_episodes_playcount') == 'true':
 			if dialog_proceed(self.title, lang(30133)):
 				delete = True
-				steps += self.UNCHANGED_PLAYCOUNT_STEPS
+				steps += self.PRESERVE_PLAYCOUNT_STEPS
 		if setting('rt_episodes_lib') == 'true':
 			if dialog_proceed(self.title, lang(30204)):
 				rate_lib = True
@@ -562,8 +562,8 @@ class Episode(Video):
 			self.__move(progress)
 		elif delete:
 			self.__delete(progress)
-		if unchanged_playcount:
-			self.__unchanged_playcount(progress)
+		if preserve_playcount:
+			self.__preserve_playcount(progress)
 		if rate_lib:
 			self.__rate_lib(progress)
 

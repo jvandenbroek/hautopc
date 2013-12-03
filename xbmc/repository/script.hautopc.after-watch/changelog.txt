@@ -1,5 +1,5 @@
 0.7.0(03-12-2013):
-* New feature: unchanged watched status (playcount)
+* New feature: preserve watched status (playcount)
 * New feature: set custom tag (gotham)
 * Improvement: separated post modules for movies/episodes
 * Bugfix: playcount when moving

@@ -17,7 +17,7 @@
 	<string id="30136">Multiple folders (lib/title/season/files.*)</string>
 	<!-- SETTINGS PROPERTIES -->
 	<string id="30700">Properties</string>
-	<string id="30701">Unchanged watched status</string>
+	<string id="30701">Preserve watched status</string>
 	<string id="30702">Set custom tag</string>
 	<!-- SETTINGS RATING -->
 	<string id="30200">Rating</string>
