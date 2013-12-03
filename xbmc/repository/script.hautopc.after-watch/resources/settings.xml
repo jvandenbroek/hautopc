@@ -11,6 +11,14 @@
 		<setting label="30101" id="fm_episodes_destination" type="folder" source="video" enable="eq(-1,1)"/>
 		<setting label="30111" id="fm_episodes_structure" type="enum" lvalues="30136" default="0" enable="!eq(-2,0)"/>
 	</category>
+	<!-- PROPERTIES -->
+	<category label="30700">
+		<setting label="30102" type="lsep"/>
+		<setting label="30701" id="pt_movies_playcount" type="bool" default="false"/>
+		<setting label="30702" id="pt_movies_tag" type="bool" default="false"/>
+		<setting label="30103" type="lsep"/>
+		<setting label="30701" id="pt_episodes_playcount" type="bool" default="false"/>
+	</category>
 	<!-- RATING -->
 	<category label="30200">
 		<setting label="30102" type="lsep"/>
@@ -31,9 +39,14 @@
 	</category>
 	<!-- POST -->
 	<category label="30400">
-		<setting label="30407" id="ps_logoff" type="bool" default="false"/>
-		<setting label="30404" id="ps_display_off" type="bool" default="false"/>
-		<setting label="30402" id="ps_quit_menu" type="bool" default="false"/>
+		<setting label="30102" type="lsep"/>
+		<setting label="30402" id="ps_movies_quit_menu" type="bool" default="false"/>
+		<setting label="30407" id="ps_movies_logoff" type="bool" default="false"/>
+		<setting label="30404" id="ps_movies_display_off" type="bool" default="false"/>
+		<setting label="30103" type="lsep"/>
+		<setting label="30402" id="ps_episodes_quit_menu" type="bool" default="false"/>
+		<setting label="30407" id="ps_episodes_logoff" type="bool" default="false"/>
+		<setting label="30404" id="ps_episodes_display_off" type="bool" default="false"/>
 	</category>
 	<!-- ADVANCED -->
 	<category label="30405">

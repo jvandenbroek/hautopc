@@ -29,6 +29,17 @@ def set_setting(id, val):
 
 
 ## DIALOG
+def xxxxxxxxdialog_recommended(movie_list):
+	y = xbmcgui.WindowDialog()
+	i = 25
+	for movie in movie_list:
+		y.addControl(xbmcgui.ControlLabel(x=190, y=i, width=500, height=25, label=movie))
+		i += 25
+	y.doModal()
+
+
+
+
 def dialog_proceed(title, subtitle):
 	proceed = True
 	if setting('confirm') == 'true':
@@ -56,7 +67,6 @@ def dialog_recommended(playing):
 			m['title'] = '* %s' % utilxbmc.get_movie_title(m['movieid'])
 	movies = sorted(movies, key=operator.itemgetter('title'))
 	i = xbmcgui.Dialog().select(lang(30509) % info('name'), [m['title'] for m in movies])
-	#l = xbmcgui.ListItem('foobar')
 	if not i == -1:
 		return movies[i]['movieid']
 
@@ -134,15 +144,17 @@ class Video:
 
 class Movie(Video):
 	def __init__(self):
-		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","imdbnumber","art"]},"id":1}')
+		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","playcount","imdbnumber","art"]},"id":1}')
 		self.type = 'movie'
 		self.movieid = j['result']['item']['id']
 		p = j['result']['item']['file']
 		self.path = os.path.normpath(p)
 		self.title = j['result']['item']['title']
+		self.playcount = j['result']['item']['playcount']
 		self.imdb = j['result']['item']['imdbnumber']
 		self.poster = j['result']['item']['art']['poster']
 		self.rating = None
+		self.tag = None
 		self.recommended = None
 
 	MOVE_STEPS = 3
@@ -179,7 +191,7 @@ class Movie(Video):
 			self.movieid = utilxbmc.get_movieid_by_path(self.path)
 			if self.movieid:
 				progress.update(lang(30514)) # setting watched
-				utilxbmc.set_movie_watched(self.movieid)
+				utilxbmc.set_movie_playcount(self.movieid, self.playcount+1)
 		except Exception, e:
 			dialog_error(e.message)
 		finally:
@@ -207,6 +219,28 @@ class Movie(Video):
 			progress.update_library()
 			self.movieid = None
 			self.path = None
+		except Exception, e:
+			dialog_error(e.message)
+		finally:
+			progress.finish_module()
+
+	UNCHANGED_PLAYCOUNT_STEPS = 1
+	def __unchanged_playcount(self, progress):
+		progress.start_module(lang(30701), self.UNCHANGED_PLAYCOUNT_STEPS)
+		try:
+			progress.update(lang(30598)) # setting old playcount
+			utilxbmc.set_movie_playcount(self.movieid, self.playcount)
+		except Exception, e:
+			dialog_error(e.message)
+		finally:
+			progress.finish_module()
+
+	SET_TAG_STEPS = 1
+	def __set_tag(self, progress):
+		progress.start_module(lang(30702), self.SET_TAG_STEPS)
+		try:
+			progress.update(lang(30597)) # setting tag
+			utilxbmc.set_movie_tag(self.movieid, self.tag)
 		except Exception, e:
 			dialog_error(e.message)
 		finally:
@@ -284,6 +318,8 @@ class Movie(Video):
 		steps = 0
 		move = False
 		delete = False
+		unchanged_playcount = False
+		set_tag = False
 		rate_imdb = False
 		rate_lib = False
 		rate_tag = False
@@ -296,6 +332,14 @@ class Movie(Video):
 			if dialog_proceed(self.title, lang(30133)):
 				delete = True
 				steps += self.DELETE_STEPS
+		if setting('pt_movies_playcount') == 'true':
+			if dialog_proceed(self.title, lang(30701)):
+				unchanged_playcount = True
+				steps += self.UNCHANGED_PLAYCOUNT_STEPS
+		if setting('pt_movies_tag') == 'true':
+			if dialog_proceed(self.title, lang(30702)):
+				set_tag = True
+				steps += self.SET_TAG_STEPS
 		if setting('rt_movies_imdb') == 'true':
 			if dialog_proceed(self.title, lang(30201)):
 				rate_imdb = True
@@ -334,6 +378,11 @@ class Movie(Video):
 				tag = xbmcgui.Dialog().input(lang(30206))
 			set_setting('rt_movies_tag_text', tag)
 		# pre context
+		if set_tag:
+			tag = xbmcgui.Dialog().input(lang(30599) % self.title)
+			while not tag:
+				tag = xbmcgui.Dialog().input(lang(30599) % self.title)
+			self.tag = tag
 		if rate_imdb or rate_lib or rate_tag:
 			rating = dialog_rating(self.title)
 			while not rating:
@@ -345,6 +394,10 @@ class Movie(Video):
 			self.__move(progress)
 		elif delete:
 			self.__delete(progress)
+		if unchanged_playcount:
+			self.__unchanged_playcount(progress)
+		if set_tag:
+			self.__set_tag(progress)
 		if rate_imdb:
 			self.__rate_imdb(progress)
 		if rate_lib:
@@ -364,13 +417,13 @@ class Movie(Video):
 		quit_menu = False
 		logoff = False
 		display_off = False
-		if setting('ps_quit_menu') == 'true':
+		if setting('ps_movies_quit_menu') == 'true':
 			if dialog_proceed(self.title, lang(30402)):
 				quit_menu = True
-		if setting('ps_logoff') == 'true':
+		if setting('ps_movies_logoff') == 'true':
 			if dialog_proceed(self.title, lang(30407)):
 				logoff = True
-		if setting('ps_display_off') == 'true':
+		if setting('ps_movies_display_off') == 'true':
 			if dialog_proceed(self.title, lang(30404)):
 				display_off = True
 		# post processing
@@ -384,12 +437,13 @@ class Movie(Video):
 
 class Episode(Video):
 	def __init__(self):
-		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","art"]},"id":1}')
+		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","playcount",art"]},"id":1}')
 		self.type = 'episode'
 		self.episodeid = j['result']['item']['id']
 		p = j['result']['item']['file']
 		self.path = os.path.normpath(p)
 		self.title = j['result']['item']['title']
+		self.playcount = j['result']['item']['playcount']
 		self.thumb = j['result']['item']['art']['thumb']
 		self.rating = None
 
@@ -416,7 +470,7 @@ class Episode(Video):
 			self.episodeid = utilxbmc.get_episodeid_by_path(self.path)
 			if self.episodeid: # if still in lib source folders
 				progress.update(lang(30514)) # setting watched
-				utilxbmc.set_episode_watched(self.episodeid)
+				utilxbmc.set_episode_playcount(self.episodeid, self.playcount+1)
 		except Exception, e:
 			dialog_error(e.message)
 		finally:
@@ -442,6 +496,17 @@ class Episode(Video):
 		finally:
 			progress.finish_module()
 		
+	UNCHANGED_PLAYCOUNT_STEPS = 1
+	def __unchanged_playcount(self, progress):
+		progress.start_module(lang(30701), self.UNCHANGED_PLAYCOUNT_STEPS)
+		try:
+			progress.update(lang(30598)) # setting old playcount
+			utilxbmc.set_episode_playcount(self.episodeid, self.playcount)
+		except Exception, e:
+			dialog_error(e.message)
+		finally:
+			progress.finish_module()
+
 	RATE_LIB_STEPS = 1
 	def __rate_lib(self, progress):
 		progress.start_module(lang(30204), self.RATE_LIB_STEPS)
@@ -460,15 +525,20 @@ class Episode(Video):
 		steps = 0
 		move = False
 		delete = False
+		unchanged_playcount = False
 		rate_lib = False
 		if setting('fm_episodes_manage') == '1': # move
 			if dialog_proceed(self.title, lang(30132)):
 				move = True
 				steps += self.MOVE_STEPS
 		elif setting('fm_episodes_manage') == '2': # delete
+			if dialog_proceed(self.title, lang(30701)):
+				unchanged_playcount = True
+				steps += self.DELETE_STEPS
+		if setting('pt_episodes_playcount') == 'true':
 			if dialog_proceed(self.title, lang(30133)):
 				delete = True
-				steps += self.DELETE_STEPS
+				steps += self.UNCHANGED_PLAYCOUNT_STEPS
 		if setting('rt_episodes_lib') == 'true':
 			if dialog_proceed(self.title, lang(30204)):
 				rate_lib = True
@@ -492,6 +562,8 @@ class Episode(Video):
 			self.__move(progress)
 		elif delete:
 			self.__delete(progress)
+		if unchanged_playcount:
+			self.__unchanged_playcount(progress)
 		if rate_lib:
 			self.__rate_lib(progress)
 
@@ -499,13 +571,13 @@ class Episode(Video):
 		quit_menu = False
 		logoff = False
 		display_off = False
-		if setting('ps_quit_menu') == 'true':
+		if setting('ps_episodes_quit_menu') == 'true':
 			if dialog_proceed(self.title, lang(30402)):
 				quit_menu = True
-		if setting('ps_logoff') == 'true':
+		if setting('ps_episodes_logoff') == 'true':
 			if dialog_proceed(self.title, lang(30407)):
 				logoff = True
-		if setting('ps_display_off') == 'true':
+		if setting('ps_episodes_display_off') == 'true':
 			if dialog_proceed(self.title, lang(30404)):
 				display_off = True
 		# post processing
