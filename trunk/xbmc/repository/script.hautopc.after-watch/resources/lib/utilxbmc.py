@@ -36,12 +36,12 @@ def get_episodeid_by_path(path):
 			if episode['file'] == path:
 				return episode['episodeid']
 
-def set_movie_watched(movieid):
-	cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.SetMovieDetails","params":{"movieid":%d,"playcount":1},"id":1}' % movieid
+def set_movie_playcount(movieid, playcount):
+	cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.SetMovieDetails","params":{"movieid":%d,"playcount":%d},"id":1}' % (movieid, playcount)
 	xbmc.executeJSONRPC(cmd)
 
-def set_episode_watched(episodeid):
-	cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.SetEpisodeDetails","params":{"episodeid":%d,"playcount":1},"id":1}' % episodeid
+def set_episode_playcount(episodeid, playcount):
+	cmd = '{"jsonrpc":"2.0","method":"VideoLibrary.SetEpisodeDetails","params":{"episodeid":%d,"playcount":%d},"id":1}' % (episodeid, playcount)
 	xbmc.executeJSONRPC(cmd)
 
 def set_movie_rating(movieid, rating):
