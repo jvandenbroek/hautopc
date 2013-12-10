@@ -9,7 +9,7 @@
 		<setting label="30103" type="lsep"/>
 		<setting label="30104" id="fm_episodes_manage" type="enum" lvalues="30105|30132|30133" default="0"/>
 		<setting label="30101" id="fm_episodes_destination" type="folder" source="video" enable="eq(-1,1)"/>
-		<setting label="30111" id="fm_episodes_structure" type="enum" lvalues="30136" default="0" enable="!eq(-2,0)"/>
+		<setting label="30111" id="fm_episodes_structure" type="enum" lvalues="30136|30137" default="0" enable="!eq(-2,0)"/>
 	</category>
 	<!-- PROPERTIES -->
 	<category label="30700">
@@ -51,8 +51,9 @@
 	<!-- ADVANCED -->
 	<category label="30405">
 		<setting label="30401" id="confirm" type="bool" default="true"/>
-		<setting label="30406" id="fm_alternate" type="bool" default="false"/>
+		<setting label="30408" id="fm_warn" type="number" default="10"/>
 		<setting label="30403" id="assume" type="slider" range="0,100" option="percent" default="90"/>
+		<setting label="30406" id="fm_alternate" type="bool" default="false"/>
 		<setting label="30999" id="hide_progress" type="bool" default="false"/>
 	</category>
 </settings>

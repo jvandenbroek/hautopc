@@ -29,7 +29,7 @@ def set_setting(id, val):
 
 
 ## DIALOG
-def xxxxxxxxdialog_recommended(movie_list):
+def todo_dialog_recommended(movie_list):
 	y = xbmcgui.WindowDialog()
 	i = 25
 	for movie in movie_list:
@@ -44,6 +44,13 @@ def dialog_proceed(title, subtitle):
 	proceed = True
 	if setting('confirm') == 'true':
 		proceed = xbmcgui.Dialog().yesno(info('name'), title, lang(30526) % subtitle)
+	return proceed
+
+def dialog_warning(module, count):
+	proceed = True
+	threshold = int(setting('fm_warn'))
+	if count > threshold:
+		proceed = xbmcgui.Dialog().yesno(info('name'), lang(30588) % (module, count))
 	return proceed
 
 def dialog_error(msg):
@@ -74,14 +81,14 @@ def dialog_recommended(playing):
 ## PROGRESS
 class Progress:
 	def __init__(self, steps):
-		self.enable = setting('hide_progress') == 'false' # todo temp
+		self.enable = setting('hide_progress') == 'false' # todo temp until gotham
 		self.steps = steps
 		self.current = 0
-		if steps > 0 and self.enable: # todo temp
-			if utilxbmc.version() == 13: # todo temp
+		if steps > 0 and self.enable: # todo temp until gotham
+			if utilxbmc.version() == 13: # todo temp until gotham
 				self.bar = xbmcgui.DialogProgressBG()
-			else: # todo temp
-				self.bar = xbmcgui.DialogProgress() # todo temp
+			else: # todo temp until gotham
+				self.bar = xbmcgui.DialogProgress() # todo temp until gotham
 			self.bar.create(info('name'))
 			self.bar.update(0, info('name'))
 
@@ -92,7 +99,7 @@ class Progress:
 	
 	def update(self, msg):
 		percent = self.current * 100 / self.steps
-		if self.enable: # todo temp
+		if self.enable: # todo temp until gotham
 			self.bar.update(percent, info('name'), lang(30531) % (self.module_title, msg))
 		self.current += 1
 		self.module_current += 1
@@ -104,7 +111,7 @@ class Progress:
 			self.module_current += skip
 		percent = self.current * 100 / self.steps
 		if self.current == self.steps:
-			if self.enable: # todo temp
+			if self.enable: # todo temp until gotham
 				self.bar.update(percent, info('name'), 'Done')
 				xbmc.sleep(500)
 				self.bar.close()
@@ -157,10 +164,11 @@ class Movie(Video):
 		self.tag = None
 		self.recommended = None
 
-	MOVE_STEPS = 3
+	MOVE_STEPS = 4
 	def __move(self, progress):
 		progress.start_module(lang(30132), self.MOVE_STEPS)
 		try:
+			progress.update(lang(30590)) # detecting library place
 			lib_destiny = os.path.normpath(setting('fm_movies_destination'))
 			if setting('fm_movies_structure') == '0':
 				lib_source = os.path.dirname(os.path.dirname(self.path))
@@ -171,20 +179,19 @@ class Movie(Video):
 			progress.update(lang(30506)) # moving files
 			source = os.path.dirname(self.path)
 			destination = os.path.normpath(setting('fm_movies_destination'))
+			alt_method = setting('fm_alternate') == 'true'
 			if setting('fm_movies_structure') == '0': # multiple folders
-				if setting('fm_alternate') == 'false':
-					utilfile.move_directory(source, destination)
-				else:
-					utilfile.copy_directory_alt(source, destination)
-					utilfile.delete_directory_alt(source)
+				count = utilfile.count_manage_directory(alt_method, source)
+				if not dialog_warning(lang(30132), count):
+					raise Exception(lang(30609))
+				utilfile.move_directory(alt_method, source, destination)
 				self.path = os.path.join(destination, self.path.split(os.sep)[-2], os.path.basename(self.path))
 			else: # single folder
 				match = os.path.splitext(os.path.basename(self.path))[0]
-				if setting('fm_alternate') == 'false':
-					utilfile.move_files(source, destination, match)
-				else:
-					utilfile.copy_files_alt(source, destination, match)
-					utilfile.delete_files_alt(source, match)
+				count = utilfile.count_manage_files(alt_method, source, match)
+				if not dialog_warning(lang(30132), count):
+					raise Exception(lang(30609))
+				utilfile.move_files(alt_method, source, destination, match)
 				self.path = os.path.join(destination, os.path.basename(self.path))
 			progress.update(lang(30513)) # updating library
 			progress.update_library()
@@ -202,19 +209,19 @@ class Movie(Video):
 		progress.start_module(lang(30133), self.DELETE_STEPS)
 		try:
 			progress.update(lang(30516)) # deleting files
-			path = os.path.dirname(self.path)
-			f = os.path.basename(self.path)
+			source = os.path.dirname(self.path)
+			alt_method = setting('fm_alternate') == 'true'
 			if setting('fm_movies_structure') == '0': # multiple folders
-				if setting('fm_alternate') == 'false':
-					utilfile.delete_directory(path)
-				else:
-					utilfile.delete_directory_alt(path)
+				count = utilfile.count_manage_directory(alt_method, source)
+				if not dialog_warning(lang(30133), count):
+					raise Exception(lang(30609))
+				utilfile.delete_directory(alt_method, source)
 			else: # single folder
-				match = os.path.splitext(f)[0]
-				if setting('fm_alternate') == 'false':
-					utilfile.delete_files(path, match)
-				else:
-					utilfile.delete_files_alt(path, match)
+				match = os.path.splitext(os.path.basename(self.path))[0]
+				count = utilfile.count_manage_files(alt_method, source, match)
+				if not dialog_warning(lang(30133), count):
+					raise Exception(lang(30609))
+				utilfile.delete_files(alt_method, source, match)
 			progress.update(lang(30513)) # updating library
 			progress.update_library()
 			self.movieid = None
@@ -437,7 +444,7 @@ class Movie(Video):
 
 class Episode(Video):
 	def __init__(self):
-		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","playcount",art"]},"id":1}')
+		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","playcount","art"]},"id":1}')
 		self.type = 'episode'
 		self.episodeid = j['result']['item']['id']
 		p = j['result']['item']['file']
@@ -447,23 +454,28 @@ class Episode(Video):
 		self.thumb = j['result']['item']['art']['thumb']
 		self.rating = None
 
-	MOVE_STEPS = 3
+	MOVE_STEPS = 4
 	def __move(self, progress):
 		progress.start_module(lang(30132), self.MOVE_STEPS)
 		try:
+			progress.update(lang(30590)) # detecting library place
 			lib_destiny = os.path.normpath(setting('fm_episodes_destination'))
 	 		lib_source = os.path.dirname(os.path.dirname(os.path.dirname(self.path)))
 		 	if lib_destiny == lib_source:
 		 		raise Exception(lang(30602))
 			progress.update(lang(30506)) # moving files
 			source = os.path.dirname(self.path)
-			destination = os.path.join(os.path.normpath(setting('fm_episodes_destination')), self.path.split(os.sep)[-3], self.path.split(os.sep)[-2])
+			destination = os.path.normpath(setting('fm_episodes_destination'))
+			alt_method = setting('fm_alternate') == 'true'
 			match = os.path.splitext(os.path.basename(self.path))[0]
-			if setting('fm_alternate') == 'false':
-				utilfile.move_files(source, destination, match, True)
-			else:
-				utilfile.copy_files_alt(source, destination, match)
-				utilfile.delete_files_alt(source, match, True)
+			count = utilfile.count_manage_files(alt_method, source, match)
+			if not dialog_warning(lang(30132), count):
+				raise Exception(lang(30609))
+			if setting('fm_episodes_structure') == '0': # multiple folders
+				destination = os.path.join(destination, self.path.split(os.sep)[-3], self.path.split(os.sep)[-2])
+			else: # single folder
+				destination = os.path.join(destination, self.path.split(os.sep)[-2])
+			utilfile.move_files(alt_method, source, destination, match, True)
 			self.path = os.path.join(destination, os.path.basename(self.path))
 			progress.update(lang(30513)) # updating library
 			progress.update_library()
@@ -482,11 +494,12 @@ class Episode(Video):
 		try:
 			progress.update(lang(30516)) # deleting files
 			source = os.path.dirname(self.path)
+			alt_method = setting('fm_alternate') == 'true'
 			match = os.path.splitext(os.path.basename(self.path))[0]
-			if setting('fm_alternate') == 'false':
-				utilfile.delete_files(source, match, True)
-			else:
-				utilfile.delete_files_alt(source, match, True)
+			count = utilfile.count_manage_files(alt_method, source, match)
+			if not dialog_warning(lang(30133), count):
+				raise Exception(lang(30609))
+			utilfile.delete_files(alt_method, source, match, True)
 			progress.update(lang(30513)) # updating library
 			progress.update_library()
 			self.episodeid = None
@@ -532,12 +545,12 @@ class Episode(Video):
 				move = True
 				steps += self.MOVE_STEPS
 		elif setting('fm_episodes_manage') == '2': # delete
-			if dialog_proceed(self.title, lang(30701)):
-				preserve_playcount = True
-				steps += self.DELETE_STEPS
-		if setting('pt_episodes_playcount') == 'true':
 			if dialog_proceed(self.title, lang(30133)):
 				delete = True
+				steps += self.DELETE_STEPS
+		if setting('pt_episodes_playcount') == 'true':
+			if dialog_proceed(self.title, lang(30701)):
+				preserve_playcount = True
 				steps += self.PRESERVE_PLAYCOUNT_STEPS
 		if setting('rt_episodes_lib') == 'true':
 			if dialog_proceed(self.title, lang(30204)):
@@ -599,6 +612,7 @@ class AfterWatchPlayer(xbmc.Player):
 		if t == 'video':
 			j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":%s},"id":1}' % i)
 			type = j['result']['item']['type']
+			print 'afterwatch --- %s' % type # todo temp until forum response
 			if type == 'movie':
 				self.playing = Movie()
 				self.__time()

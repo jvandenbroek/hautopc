@@ -1,3 +1,9 @@
+0.8.0 (10-12-2013):
+* New feature: single folder structure for episodes
+* New feature: warning when deleting/moving many files
+* Bugfix: episodes broken
+* Bugfix: single folder files matching
+
 0.7.0 (03-12-2013):
 * New feature: preserve watched status (playcount)
 * New feature: set custom tag (gotham)

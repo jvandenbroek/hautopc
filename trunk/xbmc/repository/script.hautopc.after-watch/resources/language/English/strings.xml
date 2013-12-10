@@ -15,12 +15,13 @@
 	<string id="30134">Multiple folders (lib/title/files.*)</string>
 	<string id="30135">Single folder (lib/files.*)</string>
 	<string id="30136">Multiple folders (lib/title/season/files.*)</string>
+	<string id="30137">Single folder (lib/title/files.*)</string>
 	<!-- SETTINGS PROPERTIES -->
 	<string id="30700">Properties</string>
 	<string id="30701">Preserve watched status</string>
 	<string id="30702">Set custom tag</string>
 	<!-- SETTINGS RATING -->
-	<string id="30200">Rating</string>
+	<string idthreshold="30200">Rating</string>
 	<string id="30201">Rate IMDb</string>
 	<string id="30204">Rate library</string>
 	<string id="30205">Set tag</string>
@@ -39,10 +40,12 @@
 	<!-- SETTINGS ADVANCED -->
 	<string id="30405">Advanced</string>
 	<string id="30401">Show confirm dialogs</string>
-	<string id="30406">Alternate file management method</string>
+	<string id="30408">Warn file management threshold</string>
 	<string id="30403">Assume as watched</string>
+	<string id="30406">Alternate file management method</string>
 	<string id="30999">[temp] Hide progress dialog</string>
 	<!-- STEPS -->
+	<string id="30590">detecting library place...</string>
 	<string id="30506">moving files...</string>
 	<string id="30513">updating library...</string>
 	<string id="30514">setting watched...</string>
@@ -66,6 +69,7 @@
 	<string id="30526">%s?</string>
 	<string id="30509">%s - Recommended</string>
 	<string id="30599">%s - Tag</string>
+	<string id="30588">%s %d files. Are you sure?</string>
 	<!-- ERRORS -->
 	<string id="30601">Episode not in library, cant rate</string>
 	<string id="30602">Episode already in watched library</string>
@@ -75,4 +79,5 @@
 	<string id="30606">Error: cant rate IMDb</string>
 	<string id="30607">Movie already in watched library</string>
 	<string id="30608">No internet connection</string>
+	<string id="30609">Canceled due to quantity of files</string>
 </strings>
