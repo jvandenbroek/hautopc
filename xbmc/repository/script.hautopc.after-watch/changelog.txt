@@ -1,3 +1,6 @@
+0.8.1 (12-12-2013):
+* Bugfix: error when updating if progress dialog disabled
+
 0.8.0 (10-12-2013):
 * New feature: single folder structure for episodes
 * New feature: warning when deleting/moving many files

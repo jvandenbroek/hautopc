@@ -132,7 +132,8 @@ class Progress:
 		percent = (self.current-1) * 100 / self.steps
 		#self.bar = xbmcgui.DialogProgressBG()
 		#self.bar.create(info('name'))
-		self.bar.update(percent, info('name'),  lang(30531) % (self.module_title, lang(30513)))
+		if self.enable: # todo temp until gotham
+			self.bar.update(percent, info('name'),  lang(30531) % (self.module_title, lang(30513)))
 
 
 ## TYPES
