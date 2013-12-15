@@ -84,13 +84,16 @@ class Progress:
 		self.enable = setting('hide_progress') == 'false' # todo temp until gotham
 		self.steps = steps
 		self.current = 0
-		if steps > 0 and self.enable: # todo temp until gotham
-			if utilxbmc.version() == 13: # todo temp until gotham
-				self.bar = xbmcgui.DialogProgressBG()
-			else: # todo temp until gotham
-				self.bar = xbmcgui.DialogProgress() # todo temp until gotham
-			self.bar.create(info('name'))
-			self.bar.update(0, info('name'))
+		if steps > 0:
+			if self.enable: # todo temp until gotham
+				if utilxbmc.version() == 13: # todo temp until gotham
+					self.bar = xbmcgui.DialogProgressBG()
+				else: # todo temp until gotham
+					self.bar = xbmcgui.DialogProgress() # todo temp until gotham
+				if not utilxbmc.version() == 13: # todo temp until gotham
+					self.bar = xbmcgui.DialogProgress() # todo temp until gotham
+				self.bar.create(info('name'))
+				self.bar.update(0, info('name'))
 
 	def start_module(self, module_title, module_steps):
 		self.module_title = module_title
@@ -112,7 +115,7 @@ class Progress:
 		percent = self.current * 100 / self.steps
 		if self.current == self.steps:
 			if self.enable: # todo temp until gotham
-				self.bar.update(percent, info('name'), 'Done')
+				self.bar.update(100, info('name'), 'Done')
 				xbmc.sleep(500)
 				self.bar.close()
 
@@ -122,17 +125,21 @@ class Progress:
 			pass
 		while xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.sleep(20)
-		#self.bar.close()
-		#self.bar = None
+		if self.enable: # todo temp until gotham
+			self.bar.close() # todo temp until gotham
+			self.bar = None # todo temp until gotham
 		xbmc.executebuiltin('UpdateLibrary(video)')
 		while not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			pass
 		while xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.sleep(20)
 		percent = (self.current-1) * 100 / self.steps
-		#self.bar = xbmcgui.DialogProgressBG()
-		#self.bar.create(info('name'))
 		if self.enable: # todo temp until gotham
+			if utilxbmc.version() == 13: # todo temp until gotham
+				self.bar = xbmcgui.DialogProgressBG()
+			else: # todo temp until gotham
+				self.bar = xbmcgui.DialogProgress() # todo temp until gotham
+			self.bar.create(info('name')) # todo temp until gotham
 			self.bar.update(percent, info('name'),  lang(30531) % (self.module_title, lang(30513)))
 
 
@@ -236,6 +243,8 @@ class Movie(Video):
 	def __preserve_playcount(self, progress):
 		progress.start_module(lang(30701), self.PRESERVE_PLAYCOUNT_STEPS)
 		try:
+			if not self.movieid:
+				raise Exception(lang(30604))
 			progress.update(lang(30598)) # setting old playcount
 			utilxbmc.set_movie_playcount(self.movieid, self.playcount)
 		except Exception, e:
@@ -247,6 +256,8 @@ class Movie(Video):
 	def __set_tag(self, progress):
 		progress.start_module(lang(30702), self.SET_TAG_STEPS)
 		try:
+			if not self.movieid:
+				raise Exception(lang(30604))
 			progress.update(lang(30597)) # setting tag
 			utilxbmc.set_movie_tag(self.movieid, self.tag)
 		except Exception, e:
@@ -514,6 +525,8 @@ class Episode(Video):
 	def __preserve_playcount(self, progress):
 		progress.start_module(lang(30701), self.PRESERVE_PLAYCOUNT_STEPS)
 		try:
+			if not self.episodeid:
+				raise Exception(lang(30601))
 			progress.update(lang(30598)) # setting old playcount
 			utilxbmc.set_episode_playcount(self.episodeid, self.playcount)
 		except Exception, e:

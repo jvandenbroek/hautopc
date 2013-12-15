@@ -19,9 +19,9 @@
 	<!-- SETTINGS PROPERTIES -->
 	<string id="30700">Properties</string>
 	<string id="30701">Preserve watched status</string>
-	<string id="30702">Set custom tag</string>
+	<string id="30702">Set custom tag [Gotham]</string>
 	<!-- SETTINGS RATING -->
-	<string idthreshold="30200">Rating</string>
+	<string id="30200">Rating</string>
 	<string id="30201">Rate IMDb</string>
 	<string id="30204">Rate library</string>
 	<string id="30205">Set tag</string>
@@ -36,7 +36,7 @@
 	<string id="30400">Post</string>
 	<string id="30407">Logoff user</string>
 	<string id="30402">Show quit menu</string>
-	<string id="30404">Turn off display (Windows OS)</string>
+	<string id="30404">Turn off display [Windows OS]</string>
 	<!-- SETTINGS ADVANCED -->
 	<string id="30405">Advanced</string>
 	<string id="30401">Show confirm dialogs</string>
@@ -71,10 +71,10 @@
 	<string id="30599">%s - Tag</string>
 	<string id="30588">%s %d files. Are you sure?</string>
 	<!-- ERRORS -->
-	<string id="30601">Episode not in library, cant rate</string>
+	<string id="30601">Episode not in library, cant process</string>
 	<string id="30602">Episode already in watched library</string>
 	<string id="30603">Recommended movies not found</string>
-	<string id="30604">Movie not in library, cant rate</string>
+	<string id="30604">Movie not in library, cant process</string>
 	<string id="30605">Cant login in IMDb</string>
 	<string id="30606">Error: cant rate IMDb</string>
 	<string id="30607">Movie already in watched library</string>
