@@ -53,6 +53,7 @@ def recommended_imdb(imdb):
 	src = session.get('http://m.imdb.com/title/%s/similarities' % imdb).text
 	session.close()
 	#movies = re.findall(r'(\w{9})/\?ref_=tt_rec_tti"\s><img\sheight="113"\swidth="76"\salt="([^"]*)"\stitle=', src)
-	movies = re.findall(r'(tt\d{7})/"\sonClick="_gaq\.push\(\[\'_trackEvent\',\s\'Find\',\s\'\',\s\'\']\);">(.*)</a>', src)
+	#movies = re.findall(r'(tt\d{7})/"\sonClick="_gaq\.push\(\[\'_trackEvent\',\s\'Find\',\s\'\',\s\'\']\);">(.*)</a>', src)
+	movies = re.findall(r'<div class="label">\s*<div class="title">\s*<a href="/title/(tt\d{7})/">([^<]*)', src)
 	movies = [{'imdb': movie[0], 'title': movie[1]} for movie in movies]
 	return movies

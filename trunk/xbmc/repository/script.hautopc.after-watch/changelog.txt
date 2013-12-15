@@ -1,3 +1,9 @@
+0.8.2 (15-12-2013):
+* Bugfix: progress dialog not showing in frodo
+* Bugfix: error in preserve playcount/set tag if not in lib
+* Bugfix: recommended not working due to change in imdb site
+* Other small improvements
+
 0.8.1 (12-12-2013):
 * Bugfix: error when updating if progress dialog disabled
 
