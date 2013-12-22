@@ -10,7 +10,7 @@ def has_net():
 
 def login_imdb(username, password):
 	session = requests.Session()
-	session.headers.update({'User-Agent':'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31'})
+	session.headers.update({'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36'})
 	# read login page
 	src = session.get('https://secure.imdb.com/register-imdb/login').text
 	match = re.search(r'<input\stype="hidden"\sname="(\w{1,9})"\svalue="(\w{1,9})"', src)
@@ -49,7 +49,7 @@ def rate_imdb(session, imdb, rating):
 
 def recommended_imdb(imdb):
 	session = requests.Session()
-	session.headers.update({'User-Agent':'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31'})
+	session.headers.update({'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36'})
 	src = session.get('http://m.imdb.com/title/%s/similarities' % imdb).text
 	session.close()
 	#movies = re.findall(r'(\w{9})/\?ref_=tt_rec_tti"\s><img\sheight="113"\swidth="76"\salt="([^"]*)"\stitle=', src)
