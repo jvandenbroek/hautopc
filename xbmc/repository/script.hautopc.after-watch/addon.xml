@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="script.hautopc.after-watch" name="After Watch" version="0.8.4" provider-name="Pynto R">
+<addon id="script.hautopc.after-watch" name="After Watch" version="0.8.5" provider-name="Pynto R">
 	<requires>
 		<import addon="xbmc.python" version="2.1.0"/>
 	</requires>

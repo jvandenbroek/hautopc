@@ -72,7 +72,9 @@ def __delete_files(source, match, del_empty):
 	files = [f for f in os.listdir(source) if os.path.isfile(os.path.join(source, f))]
 	for f in files:
 		if match == os.path.splitext(f)[0]:
-			os.remove(os.path.join(source, f))
+			f = os.path.join(source, f)
+			os.chmod(f, 0777)
+			os.remove(f)
 	# delete source directory if empty
 	if del_empty and len(os.listdir(source)) == 0:
 		os.rmdir(source)

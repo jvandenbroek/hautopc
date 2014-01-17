@@ -27,8 +27,6 @@ def setting(id):
 def set_setting(id, val):
 	__addon__.setSetting(id, val)
 
-class MyException(Exception):
-	pass
 
 ## DIALOG
 def todo_dialog_recommended(movie_list):
@@ -38,8 +36,6 @@ def todo_dialog_recommended(movie_list):
 		y.addControl(xbmcgui.ControlLabel(x=190, y=i, width=500, height=25, label=movie))
 		i += 25
 	y.doModal()
-
-
 
 
 def dialog_proceed(title, subtitle):
@@ -161,7 +157,7 @@ class Video:
 
 class Movie(Video):
 	def __init__(self):
-		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","playcount","imdbnumber","art"]},"id":1}')
+		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","playcount","imdbnumber"]},"id":1}')
 		self.type = 'movie'
 		self.movieid = j['result']['item']['id']
 		p = j['result']['item']['file']
@@ -169,7 +165,6 @@ class Movie(Video):
 		self.title = j['result']['item']['title']
 		self.playcount = j['result']['item']['playcount']
 		self.imdb = j['result']['item']['imdbnumber']
-		self.poster = j['result']['item']['art']['poster']
 		self.rating = None
 		self.tag = None
 		self.recommended = None
@@ -185,7 +180,7 @@ class Movie(Video):
 		 	else:
 		 		lib_source = os.path.dirname(self.path)
 		 	if lib_destiny == lib_source:
-		 		raise MyException(lang(30607))
+		 		raise Exception(lang(30607))
 			progress.update(lang(30506)) # moving files
 			source = os.path.dirname(self.path)
 			destination = os.path.normpath(setting('fm_movies_destination'))
@@ -193,14 +188,14 @@ class Movie(Video):
 			if setting('fm_movies_structure') == '0': # multiple folders
 				count = utilfile.count_manage_directory(alt_method, source)
 				if not dialog_warning(lang(30132), count):
-					raise MyException(lang(30609))
+					raise Exception(lang(30609))
 				utilfile.move_directory(alt_method, source, destination)
 				self.path = os.path.join(destination, self.path.split(os.sep)[-2], os.path.basename(self.path))
 			else: # single folder
 				match = os.path.splitext(os.path.basename(self.path))[0]
 				count = utilfile.count_manage_files(alt_method, source, match)
 				if not dialog_warning(lang(30132), count):
-					raise MyException(lang(30609))
+					raise Exception(lang(30609))
 				utilfile.move_files(alt_method, source, destination, match)
 				self.path = os.path.join(destination, os.path.basename(self.path))
 			progress.update(lang(30513)) # updating library
@@ -209,7 +204,7 @@ class Movie(Video):
 			if self.movieid:
 				progress.update(lang(30514)) # setting watched
 				utilxbmc.set_movie_playcount(self.movieid, self.playcount+1)
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -224,19 +219,19 @@ class Movie(Video):
 			if setting('fm_movies_structure') == '0': # multiple folders
 				count = utilfile.count_manage_directory(alt_method, source)
 				if not dialog_warning(lang(30133), count):
-					raise MyException(lang(30609))
+					raise Exception(lang(30609))
 				utilfile.delete_directory(alt_method, source)
 			else: # single folder
 				match = os.path.splitext(os.path.basename(self.path))[0]
 				count = utilfile.count_manage_files(alt_method, source, match)
 				if not dialog_warning(lang(30133), count):
-					raise MyException(lang(30609))
+					raise Exception(lang(30609))
 				utilfile.delete_files(alt_method, source, match)
 			progress.update(lang(30513)) # updating library
 			progress.update_library()
 			self.movieid = None
 			self.path = None
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -246,10 +241,10 @@ class Movie(Video):
 		progress.start_module(lang(30701), self.PRESERVE_PLAYCOUNT_STEPS)
 		try:
 			if not self.movieid:
-				raise MyException(lang(30604))
+				raise Exception(lang(30604))
 			progress.update(lang(30598)) # setting old playcount
 			utilxbmc.set_movie_playcount(self.movieid, self.playcount)
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -259,10 +254,10 @@ class Movie(Video):
 		progress.start_module(lang(30702), self.SET_TAG_STEPS)
 		try:
 			if not self.movieid:
-				raise MyException(lang(30604))
+				raise Exception(lang(30604))
 			progress.update(lang(30597)) # setting tag
 			utilxbmc.set_movie_tag(self.movieid, self.tag)
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -272,18 +267,18 @@ class Movie(Video):
 		progress.start_module(lang(30201), self.RATE_IMDB_STEPS)
 		try:
 			if not utilnet.has_net():
-				raise MyException(lang(30608))
+				raise Exception(lang(30608))
 			progress.update(lang(30519)) # logging in imdb
 			s = utilnet.login_imdb(setting('rt_imdb_user'), setting('rt_imdb_pass'))
 			if not s:
-				raise MyException(lang(30605))
+				raise Exception(lang(30605))
 			progress.update(lang(30520)) # rating on imdb
 			s = utilnet.rate_imdb(s, self.imdb, self.rating)
 			if not s:
-				raise MyException(lang(30606))
+				raise Exception(lang(30606))
 			progress.update(lang(30521)) # logging out imdb
 			utilnet.logout_imdb(s)
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -293,10 +288,10 @@ class Movie(Video):
 		progress.start_module(lang(30204), self.RATE_LIB_STEPS)
 		try:
 			if not self.movieid:
-				raise MyException(lang(30604))
+				raise Exception(lang(30604))
 			progress.update(lang(30522)) # updating rating
 			utilxbmc.set_movie_rating(self.movieid, self.rating)
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -306,13 +301,13 @@ class Movie(Video):
 		progress.start_module(lang(30205), self.RATE_TAG_STEPS)
 		try:
 			if not self.movieid:
-				raise MyException(lang(30604))
+				raise Exception(lang(30604))
 			progress.update(lang(30524)) # setting tag
 			tag = setting('rt_movies_tag_text')
 			if '%s' in tag:
 				tag = tag % self.rating
 			utilxbmc.set_movie_tag(self.movieid, tag)
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -322,16 +317,16 @@ class Movie(Video):
 		progress.start_module(lang(30301), self.RECOMMENDED_STEPS)
 		try:
 			if not utilnet.has_net():
-				raise MyException(lang(30608))
+				raise Exception(lang(30608))
 			progress.update(lang(30527)) # browsing imdb
 			movies = utilnet.recommended_imdb(self.imdb)
 			if not movies:
-				raise MyException(lang(30603))
+				raise Exception(lang(30603))
 			progress.update(lang(30528)) # searching library
 			for movie in movies:
 				movie['movieid'] = utilxbmc.get_movieid_by_imdb(movie['imdb'])
 			self.recommended = movies
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -460,14 +455,13 @@ class Movie(Video):
 
 class Episode(Video):
 	def __init__(self):
-		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","playcount","art"]},"id":1}')
+		j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":1,"properties":["file","title","playcount"]},"id":1}')
 		self.type = 'episode'
 		self.episodeid = j['result']['item']['id']
 		p = j['result']['item']['file']
 		self.path = os.path.normpath(p)
 		self.title = j['result']['item']['title']
 		self.playcount = j['result']['item']['playcount']
-		self.thumb = j['result']['item']['art']['thumb']
 		self.rating = None
 
 	MOVE_STEPS = 4
@@ -478,7 +472,7 @@ class Episode(Video):
 			lib_destiny = os.path.normpath(setting('fm_episodes_destination'))
 	 		lib_source = os.path.dirname(os.path.dirname(os.path.dirname(self.path)))
 		 	if lib_destiny == lib_source:
-		 		raise MyException(lang(30602))
+		 		raise Exception(lang(30602))
 			progress.update(lang(30506)) # moving files
 			source = os.path.dirname(self.path)
 			destination = os.path.normpath(setting('fm_episodes_destination'))
@@ -486,7 +480,7 @@ class Episode(Video):
 			match = os.path.splitext(os.path.basename(self.path))[0]
 			count = utilfile.count_manage_files(alt_method, source, match)
 			if not dialog_warning(lang(30132), count):
-				raise MyException(lang(30609))
+				raise Exception(lang(30609))
 			if setting('fm_episodes_structure') == '0': # multiple folders
 				destination = os.path.join(destination, self.path.split(os.sep)[-3], self.path.split(os.sep)[-2])
 			else: # single folder
@@ -499,7 +493,7 @@ class Episode(Video):
 			if self.episodeid: # if still in lib source folders
 				progress.update(lang(30514)) # setting watched
 				utilxbmc.set_episode_playcount(self.episodeid, self.playcount+1)
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -514,13 +508,13 @@ class Episode(Video):
 			match = os.path.splitext(os.path.basename(self.path))[0]
 			count = utilfile.count_manage_files(alt_method, source, match)
 			if not dialog_warning(lang(30133), count):
-				raise MyException(lang(30609))
+				raise Exception(lang(30609))
 			utilfile.delete_files(alt_method, source, match, True)
 			progress.update(lang(30513)) # updating library
 			progress.update_library()
 			self.episodeid = None
 			self.path = None
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -530,10 +524,10 @@ class Episode(Video):
 		progress.start_module(lang(30701), self.PRESERVE_PLAYCOUNT_STEPS)
 		try:
 			if not self.episodeid:
-				raise MyException(lang(30601))
+				raise Exception(lang(30601))
 			progress.update(lang(30598)) # setting old playcount
 			utilxbmc.set_episode_playcount(self.episodeid, self.playcount)
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -543,10 +537,10 @@ class Episode(Video):
 		progress.start_module(lang(30204), self.RATE_LIB_STEPS)
 		try:
 			if not self.episodeid:
-				raise MyException(lang(30601))
+				raise Exception(lang(30601))
 			progress.update(lang(30522)) # updating rating
 			utilxbmc.set_episode_rating(self.episodeid, self.rating)
-		except MyException, e:
+		except Exception, e:
 			dialog_error(e.message)
 		finally:
 			progress.finish_module()
@@ -630,7 +624,6 @@ class AfterWatchPlayer(xbmc.Player):
 		if t == 'video':
 			j = utilxbmc.xjson('{"jsonrpc":"2.0","method":"Player.GetItem","params":{"playerid":%s},"id":1}' % i)
 			type = j['result']['item']['type']
-			print 'afterwatch --- %s' % type # todo temp until forum response
 			if type == 'movie':
 				self.playing = Movie()
 				self.__time()
