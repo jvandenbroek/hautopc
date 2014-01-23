@@ -3,6 +3,7 @@ import xbmcaddon
 import xbmcgui
 import os
 import operator
+import webbrowser
 from resources.lib import utilfile
 from resources.lib import utilnet
 from resources.lib import utilxbmc
@@ -143,6 +144,9 @@ class Progress:
 
 ## TYPES
 class Video:
+	def browser_imdb(self):
+		webbrowser.open('http://www.imdb.com/title/%s/' % self.imdb)
+
 	def show_quit_menu(self):
 		xbmc.executebuiltin('ActivateWindow(shutdownmenu)')
 
@@ -204,6 +208,8 @@ class Movie(Video):
 			if self.movieid:
 				progress.update(lang(30514)) # setting watched
 				utilxbmc.set_movie_playcount(self.movieid, self.playcount+1)
+		except OSError:
+			dialog_error(lang(30610))
 		except Exception, e:
 			dialog_error(e.message)
 		finally:
@@ -231,6 +237,8 @@ class Movie(Video):
 			progress.update_library()
 			self.movieid = None
 			self.path = None
+		except OSError:
+			dialog_error(lang(30610))
 		except Exception, e:
 			dialog_error(e.message)
 		finally:
@@ -432,9 +440,13 @@ class Movie(Video):
 				utilxbmc.play_movie(movieid)
 
 		# post confirm
+		browser_imdb = False
 		quit_menu = False
 		logoff = False
 		display_off = False
+		if setting('ps_browser_imdb') == 'true':
+			if dialog_proceed(self.title, lang(30409)):
+				browser_imdb = True
 		if setting('ps_movies_quit_menu') == 'true':
 			if dialog_proceed(self.title, lang(30402)):
 				quit_menu = True
@@ -445,6 +457,8 @@ class Movie(Video):
 			if dialog_proceed(self.title, lang(30404)):
 				display_off = True
 		# post processing
+		if browser_imdb:
+			self.browser_imdb()
 		if quit_menu:
 			self.show_quit_menu()
 		if logoff:
@@ -493,6 +507,8 @@ class Episode(Video):
 			if self.episodeid: # if still in lib source folders
 				progress.update(lang(30514)) # setting watched
 				utilxbmc.set_episode_playcount(self.episodeid, self.playcount+1)
+		except OSError:
+			dialog_error(lang(30610))
 		except Exception, e:
 			dialog_error(e.message)
 		finally:
@@ -514,6 +530,8 @@ class Episode(Video):
 			progress.update_library()
 			self.episodeid = None
 			self.path = None
+		except OSError:
+			dialog_error(lang(30610))
 		except Exception, e:
 			dialog_error(e.message)
 		finally:
