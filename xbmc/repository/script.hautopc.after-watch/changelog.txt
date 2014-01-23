@@ -1,3 +1,7 @@
+0.9.0 (23-01-2014):
+* New feature: Open IMDb in browser
+* Bugfixes
+
 0.8.5 (17-01-2014):
 * Bugfixes
 

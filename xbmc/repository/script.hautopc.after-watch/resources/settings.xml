@@ -40,6 +40,7 @@
 	<!-- POST -->
 	<category label="30400">
 		<setting label="30102" type="lsep"/>
+		<setting label="30409" id="ps_browser_imdb" type="bool" default="false"/>
 		<setting label="30402" id="ps_movies_quit_menu" type="bool" default="false"/>
 		<setting label="30407" id="ps_movies_logoff" type="bool" default="false"/>
 		<setting label="30404" id="ps_movies_display_off" type="bool" default="false"/>
