@@ -53,7 +53,7 @@ def dialog_warning(module, count):
 	return proceed
 
 def dialog_error(msg):
-	xbmcgui.Dialog().ok(info('name'), msg)
+	xbmcgui.Dialog().ok(info('name'), str(msg))
 
 def dialog_notification(msg):
 	xbmc.executebuiltin('Notification(%s,%s,5000,%s)' % (info('name'), msg, info('icon')))
